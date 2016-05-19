@@ -16,11 +16,12 @@ namespace ReadoutWinform
     public partial class MainForm : Form
     {
         public List<double> Frequency;
-        private DataContainer tmpcontainer;
+        //private DataContainer tmpcontainer;
+        private DCWrapper tmpcontainer;
         private int tmpcontainerpos;
         private Queue<double> displayqueue;
 
-        private int softwareDSCount = 100;
+        private int softwareDSCount = 10;
 
         private bool keepRunning;
         private const int dc_length = 1000;
@@ -41,12 +42,13 @@ namespace ReadoutWinform
             
             while (keepRunning)
             {                
-                var datacontainer = new DataContainer(dc_length);
-                Program.DataContainers.Add(datacontainer);
-                datacontainer.StartDateTime = DateTime.Now;
+                var dcwrapper = new DCWrapper(dc_length);
+                dcwrapper.SDCount = softwareDSCount;
+                Program.DataContainers.Add(dcwrapper);
+                dcwrapper.StartDateTime = DateTime.Now;
 
                 rbcp.ToggleIQDataGate(true);
-                readout.Read(datacontainer, datacontainer.Length);
+                readout.Read(dcwrapper, dcwrapper.Length);
                 rbcp.ToggleIQDataGate(false);
             }            
             //StartButton.Enabled = true;
@@ -80,27 +82,28 @@ namespace ReadoutWinform
 
         private void DisplayQueueManipulation()
         {
-            var newpoints = tmpcontainer.ConvertedLength - tmpcontainerpos;
+            var newpoints = tmpcontainer.SDIndex - tmpcontainerpos;
             Enumerable.Range(tmpcontainerpos, newpoints).ToList().ForEach(i =>
             {
-                var tmpi = tmpcontainer.IQArray[0].Is[i];
-                var tmpq = tmpcontainer.IQArray[0].Qs[i];
+                var tmpi = tmpcontainer.SDIQArray[0].Is[i];
+                var tmpq = tmpcontainer.SDIQArray[0].Qs[i];
                 displayqueue.Enqueue(Math.Sqrt(tmpi * tmpi + tmpq * tmpq));
-                if (displayqueue.Count > 500)
+                if (displayqueue.Count > DataViewPanel.Width)
                     displayqueue.Dequeue();
             });
-            tmpcontainerpos = tmpcontainer.ConvertedLength;
+            tmpcontainerpos = tmpcontainer.SDIndex;
         }
 
         private void DisplayRefreshTimer_Tick(object sender, EventArgs e)
         {
-            var nowcontainer = Program.DataContainers.Last();
+            var nowcontainer = (DCWrapper)Program.DataContainers.Last();
             if (tmpcontainer == null)
                 tmpcontainer = nowcontainer;
             
             tmpcontainer.Convert();
+            tmpcontainer.SoftwareDownsample();
             bool toberefreshed = false;
-            if(tmpcontainer.ConvertedLength != tmpcontainerpos)
+            if(tmpcontainer.SDIndex != tmpcontainerpos)
             {
                 DisplayQueueManipulation();
                 toberefreshed = true;
