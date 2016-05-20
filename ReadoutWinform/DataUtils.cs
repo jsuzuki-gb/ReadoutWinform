@@ -85,6 +85,21 @@ namespace ReadOutTestConsole
             Write(buff, byte_length);
             Convert();
         }
+
+        public List<string> Express()
+        {
+            Convert();
+            var expression = Enumerable.Range(0, ConvertedLength).Select(i =>
+            {
+                List<string> ts = new List<string> { TSList[i].ToString() } ;
+                List<string> Is_str = Enumerable.Range(0, Program.NumberOfChannels).Select(ch => IQArray[ch].Is[i].ToString()).ToList();
+                List<string> Qs_str = Enumerable.Range(0, Program.NumberOfChannels).Select(ch => IQArray[ch].Qs[i].ToString()).ToList();
+                ts.AddRange(Is_str); ts.AddRange(Qs_str);
+                return string.Join(" ", ts);
+            });
+
+            return expression.ToList();
+        }
     }
 
     class DataUtils

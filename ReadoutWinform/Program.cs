@@ -13,12 +13,15 @@ namespace ReadoutWinform
         /// The main entry point for the application.
         /// </summary>
         /// 
+        public static bool GUI_DEBUG = false;
+
         public static bool MY_DEBUG = false;
         public static int NumberOfChannels = 2;
         public static double ADCSampleRate = 200e6;
         public static double DownSampleRate = 2e5;
         public static int DataUnit = NumberOfChannels * 14 + 7;
         public static bool Verbose = true;
+        public static int SoftwareDownsampleCount = 20;
 
         public static List<DataContainer> DataContainers;
 
@@ -44,7 +47,8 @@ namespace ReadoutWinform
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            init();
+            if(!GUI_DEBUG)
+                init();
             DataContainers = new List<DataContainer>();
 
             Application.Run(new MainForm());
