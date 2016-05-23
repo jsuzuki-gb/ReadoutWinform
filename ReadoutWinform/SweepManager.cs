@@ -28,11 +28,18 @@ namespace ReadOutTestConsole
                 }
                 return instance;
             }            
-        }
+        }        
 
         private SweepManager()
         {
             NumberOfSamples = 10;
+            Is = new List<List<double>>();
+            Qs = new List<List<double>>();
+            Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => { Is.Add(new List<double>()); Qs.Add(new List<double>()); });
+        }
+
+        public void Clear()
+        {
             Is = new List<List<double>>();
             Qs = new List<List<double>>();
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => { Is.Add(new List<double>()); Qs.Add(new List<double>()); });

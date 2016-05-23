@@ -35,12 +35,17 @@
             this.DisplayRefreshTimer = new System.Windows.Forms.Timer(this.components);
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ROStatusStrip = new System.Windows.Forms.StatusStrip();
             this.ReadoutStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.MainTab = new System.Windows.Forms.TabControl();
             this.TODPage = new System.Windows.Forms.TabPage();
+            this.axisPanel = new System.Windows.Forms.Panel();
             this.SettingsPage = new System.Windows.Forms.TabPage();
+            this.refreshButton = new System.Windows.Forms.Button();
+            this.settingApplyButton = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.xAxisDisplaySpacingTextBox = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -55,16 +60,22 @@
             this.freqTextBox1 = new System.Windows.Forms.TextBox();
             this.freqTextBox2 = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
-            this.xAxisDisplaySpacingTextBox = new System.Windows.Forms.TextBox();
-            this.settingApplyButton = new System.Windows.Forms.Button();
+            this.sweepTab = new System.Windows.Forms.TabPage();
+            this.sweepAbsPanel = new System.Windows.Forms.Panel();
+            this.sweepStartFreqTextbox = new System.Windows.Forms.TextBox();
+            this.sweepEndFreqTextbox = new System.Windows.Forms.TextBox();
+            this.sweepStartButton = new System.Windows.Forms.Button();
+            this.sweepDisplayRefreshTimer = new System.Windows.Forms.Timer(this.components);
+            this.sweepCountTextbox = new System.Windows.Forms.TextBox();
             this.programBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.ROStatusStrip.SuspendLayout();
             this.MainTab.SuspendLayout();
             this.TODPage.SuspendLayout();
+            this.axisPanel.SuspendLayout();
             this.SettingsPage.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
+            this.sweepTab.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.programBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
@@ -90,10 +101,10 @@
             // 
             // DataViewPanel
             // 
-            this.DataViewPanel.BackColor = System.Drawing.Color.White;
-            this.DataViewPanel.Location = new System.Drawing.Point(6, 46);
+            this.DataViewPanel.BackColor = System.Drawing.Color.Transparent;
+            this.DataViewPanel.Location = new System.Drawing.Point(31, 0);
             this.DataViewPanel.Name = "DataViewPanel";
-            this.DataViewPanel.Size = new System.Drawing.Size(934, 591);
+            this.DataViewPanel.Size = new System.Drawing.Size(900, 550);
             this.DataViewPanel.TabIndex = 2;
             // 
             // DisplayRefreshTimer
@@ -119,6 +130,13 @@
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(50, 29);
             this.fileToolStripMenuItem.Text = "File";
             // 
+            // saveToolStripMenuItem
+            // 
+            this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(134, 30);
+            this.saveToolStripMenuItem.Text = "Save";
+            this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
+            // 
             // ROStatusStrip
             // 
             this.ROStatusStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
@@ -140,6 +158,7 @@
             // MainTab
             // 
             this.MainTab.Controls.Add(this.TODPage);
+            this.MainTab.Controls.Add(this.sweepTab);
             this.MainTab.Controls.Add(this.SettingsPage);
             this.MainTab.Location = new System.Drawing.Point(12, 36);
             this.MainTab.Name = "MainTab";
@@ -151,7 +170,7 @@
             // 
             this.TODPage.Controls.Add(this.StartButton);
             this.TODPage.Controls.Add(this.StopButton);
-            this.TODPage.Controls.Add(this.DataViewPanel);
+            this.TODPage.Controls.Add(this.axisPanel);
             this.TODPage.Location = new System.Drawing.Point(4, 28);
             this.TODPage.Name = "TODPage";
             this.TODPage.Padding = new System.Windows.Forms.Padding(3);
@@ -160,8 +179,17 @@
             this.TODPage.Text = "TOD";
             this.TODPage.UseVisualStyleBackColor = true;
             // 
+            // axisPanel
+            // 
+            this.axisPanel.Controls.Add(this.DataViewPanel);
+            this.axisPanel.Location = new System.Drawing.Point(6, 46);
+            this.axisPanel.Name = "axisPanel";
+            this.axisPanel.Size = new System.Drawing.Size(934, 594);
+            this.axisPanel.TabIndex = 3;
+            // 
             // SettingsPage
             // 
+            this.SettingsPage.Controls.Add(this.refreshButton);
             this.SettingsPage.Controls.Add(this.settingApplyButton);
             this.SettingsPage.Controls.Add(this.tableLayoutPanel1);
             this.SettingsPage.Location = new System.Drawing.Point(4, 28);
@@ -171,6 +199,28 @@
             this.SettingsPage.TabIndex = 1;
             this.SettingsPage.Text = "Settings";
             this.SettingsPage.UseVisualStyleBackColor = true;
+            // 
+            // refreshButton
+            // 
+            this.refreshButton.Font = new System.Drawing.Font("MS UI Gothic", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.refreshButton.Location = new System.Drawing.Point(673, 577);
+            this.refreshButton.Name = "refreshButton";
+            this.refreshButton.Size = new System.Drawing.Size(143, 40);
+            this.refreshButton.TabIndex = 2;
+            this.refreshButton.Text = "Refresh";
+            this.refreshButton.UseVisualStyleBackColor = true;
+            this.refreshButton.Click += new System.EventHandler(this.refreshButton_Click);
+            // 
+            // settingApplyButton
+            // 
+            this.settingApplyButton.Font = new System.Drawing.Font("MS UI Gothic", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.settingApplyButton.Location = new System.Drawing.Point(831, 577);
+            this.settingApplyButton.Name = "settingApplyButton";
+            this.settingApplyButton.Size = new System.Drawing.Size(90, 40);
+            this.settingApplyButton.TabIndex = 1;
+            this.settingApplyButton.Text = "Apply";
+            this.settingApplyButton.UseVisualStyleBackColor = true;
+            this.settingApplyButton.Click += new System.EventHandler(this.settingApplyButton_Click);
             // 
             // tableLayoutPanel1
             // 
@@ -207,6 +257,14 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(650, 518);
             this.tableLayoutPanel1.TabIndex = 0;
+            // 
+            // xAxisDisplaySpacingTextBox
+            // 
+            this.xAxisDisplaySpacingTextBox.Location = new System.Drawing.Point(328, 43);
+            this.xAxisDisplaySpacingTextBox.Name = "xAxisDisplaySpacingTextBox";
+            this.xAxisDisplaySpacingTextBox.Size = new System.Drawing.Size(150, 29);
+            this.xAxisDisplaySpacingTextBox.TabIndex = 13;
+            this.xAxisDisplaySpacingTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // label6
             // 
@@ -248,7 +306,7 @@
             // 
             this.yTopTextBox.Location = new System.Drawing.Point(328, 123);
             this.yTopTextBox.Name = "yTopTextBox";
-            this.yTopTextBox.Size = new System.Drawing.Size(150, 29);
+            this.yTopTextBox.Size = new System.Drawing.Size(319, 29);
             this.yTopTextBox.TabIndex = 3;
             this.yTopTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -269,7 +327,7 @@
             // 
             this.yBottomTextBox.Location = new System.Drawing.Point(328, 163);
             this.yBottomTextBox.Name = "yBottomTextBox";
-            this.yBottomTextBox.Size = new System.Drawing.Size(150, 29);
+            this.yBottomTextBox.Size = new System.Drawing.Size(319, 29);
             this.yBottomTextBox.TabIndex = 5;
             this.yBottomTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
@@ -337,35 +395,68 @@
             this.label8.TabIndex = 12;
             this.label8.Text = "X-axis display spacing";
             // 
-            // xAxisDisplaySpacingTextBox
+            // sweepTab
             // 
-            this.xAxisDisplaySpacingTextBox.Location = new System.Drawing.Point(328, 43);
-            this.xAxisDisplaySpacingTextBox.Name = "xAxisDisplaySpacingTextBox";
-            this.xAxisDisplaySpacingTextBox.Size = new System.Drawing.Size(150, 29);
-            this.xAxisDisplaySpacingTextBox.TabIndex = 13;
-            this.xAxisDisplaySpacingTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.sweepTab.Controls.Add(this.sweepCountTextbox);
+            this.sweepTab.Controls.Add(this.sweepStartButton);
+            this.sweepTab.Controls.Add(this.sweepEndFreqTextbox);
+            this.sweepTab.Controls.Add(this.sweepStartFreqTextbox);
+            this.sweepTab.Controls.Add(this.sweepAbsPanel);
+            this.sweepTab.Location = new System.Drawing.Point(4, 28);
+            this.sweepTab.Name = "sweepTab";
+            this.sweepTab.Padding = new System.Windows.Forms.Padding(3);
+            this.sweepTab.Size = new System.Drawing.Size(946, 643);
+            this.sweepTab.TabIndex = 2;
+            this.sweepTab.Text = "Sweep";
+            this.sweepTab.UseVisualStyleBackColor = true;
             // 
-            // settingApplyButton
+            // sweepAbsPanel
             // 
-            this.settingApplyButton.Font = new System.Drawing.Font("MS UI Gothic", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.settingApplyButton.Location = new System.Drawing.Point(831, 577);
-            this.settingApplyButton.Name = "settingApplyButton";
-            this.settingApplyButton.Size = new System.Drawing.Size(90, 40);
-            this.settingApplyButton.TabIndex = 1;
-            this.settingApplyButton.Text = "Apply";
-            this.settingApplyButton.UseVisualStyleBackColor = true;
-            this.settingApplyButton.Click += new System.EventHandler(this.settingApplyButton_Click);
+            this.sweepAbsPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sweepAbsPanel.Location = new System.Drawing.Point(20, 18);
+            this.sweepAbsPanel.Name = "sweepAbsPanel";
+            this.sweepAbsPanel.Size = new System.Drawing.Size(476, 326);
+            this.sweepAbsPanel.TabIndex = 0;
+            // 
+            // sweepStartFreqTextbox
+            // 
+            this.sweepStartFreqTextbox.Location = new System.Drawing.Point(20, 359);
+            this.sweepStartFreqTextbox.Name = "sweepStartFreqTextbox";
+            this.sweepStartFreqTextbox.Size = new System.Drawing.Size(160, 25);
+            this.sweepStartFreqTextbox.TabIndex = 1;
+            // 
+            // sweepEndFreqTextbox
+            // 
+            this.sweepEndFreqTextbox.Location = new System.Drawing.Point(336, 359);
+            this.sweepEndFreqTextbox.Name = "sweepEndFreqTextbox";
+            this.sweepEndFreqTextbox.Size = new System.Drawing.Size(160, 25);
+            this.sweepEndFreqTextbox.TabIndex = 2;
+            this.sweepEndFreqTextbox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // sweepStartButton
+            // 
+            this.sweepStartButton.Location = new System.Drawing.Point(729, 18);
+            this.sweepStartButton.Name = "sweepStartButton";
+            this.sweepStartButton.Size = new System.Drawing.Size(188, 40);
+            this.sweepStartButton.TabIndex = 3;
+            this.sweepStartButton.Text = "Sweep start";
+            this.sweepStartButton.UseVisualStyleBackColor = true;
+            this.sweepStartButton.Click += new System.EventHandler(this.sweepStartButton_Click);
+            // 
+            // sweepDisplayRefreshTimer
+            // 
+            this.sweepDisplayRefreshTimer.Tick += new System.EventHandler(this.sweepDisplayRefreshTimer_Tick);
+            // 
+            // sweepCountTextbox
+            // 
+            this.sweepCountTextbox.Location = new System.Drawing.Point(211, 359);
+            this.sweepCountTextbox.Name = "sweepCountTextbox";
+            this.sweepCountTextbox.Size = new System.Drawing.Size(100, 25);
+            this.sweepCountTextbox.TabIndex = 4;
             // 
             // programBindingSource
             // 
             this.programBindingSource.DataSource = typeof(ReadoutWinform.Program);
-            // 
-            // saveToolStripMenuItem
-            // 
-            this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(211, 30);
-            this.saveToolStripMenuItem.Text = "Save";
-            this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -386,9 +477,12 @@
             this.ROStatusStrip.PerformLayout();
             this.MainTab.ResumeLayout(false);
             this.TODPage.ResumeLayout(false);
+            this.axisPanel.ResumeLayout(false);
             this.SettingsPage.ResumeLayout(false);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
+            this.sweepTab.ResumeLayout(false);
+            this.sweepTab.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.programBindingSource)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -427,6 +521,15 @@
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Button settingApplyButton;
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
+        private System.Windows.Forms.Button refreshButton;
+        private System.Windows.Forms.Panel axisPanel;
+        private System.Windows.Forms.TabPage sweepTab;
+        private System.Windows.Forms.Button sweepStartButton;
+        private System.Windows.Forms.TextBox sweepEndFreqTextbox;
+        private System.Windows.Forms.TextBox sweepStartFreqTextbox;
+        private System.Windows.Forms.Panel sweepAbsPanel;
+        private System.Windows.Forms.Timer sweepDisplayRefreshTimer;
+        private System.Windows.Forms.TextBox sweepCountTextbox;
     }
 }
 

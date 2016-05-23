@@ -22,6 +22,7 @@ namespace ReadoutWinform
         private Queue<double> displayqueue;
 
         private bool keepRunning;
+        private bool measuring;
         private const int dc_length = 1000;
 
         // TOD Display settings
@@ -29,6 +30,16 @@ namespace ReadoutWinform
         private bool yAxisFix;
         private double yAxisTop;
         private double yAxisBottom;
+
+        private int xGridNumber; // TO BE IMPLEMENTED
+        private int yGridNumber; // TO BE IMPLEMENTED
+        private int xGridTmpPos;
+        private Font gridFont = new Font("MS UI Gothic", 10);
+
+        // for sweep
+        private double sweepStartFreq;
+        private double sweepEndFreq;
+        private int sweepCount;
 
         public MainForm()
         {
@@ -40,22 +51,32 @@ namespace ReadoutWinform
             yAxisFix = false;
             yAxisTop = 100;
             yAxisBottom = 0;
+            xGridNumber = 3;
+            yGridNumber = 3;
+            xGridTmpPos = 0;
+
+            sweepCount = 101;
+            
 
             // For DEBUG
             Frequency.Add(6.55e6); // resonance
             Frequency.Add(10e6); // off resonance
             // For DEBUG FIN
             InitializeComponent();
+            axisPanel.Controls.Add(DataViewPanel);            
             ShowSettings();
 
             keepRunning = false;
+            measuring = false;
             DataViewPanel.Paint += new PaintEventHandler(PanelDraw);
+            axisPanel.Paint += new PaintEventHandler(axDraw);
+            sweepAbsPanel.Paint += new PaintEventHandler(sweepAbsDraw);
             ReadoutStatus.Text = "Ready";
         }
 
         private void startMeasurement()
         {            
-            if (keepRunning)
+            if (measuring)
                 return;            
                         
             var ow = OutputWave.Instance;
@@ -66,6 +87,7 @@ namespace ReadoutWinform
             var readout = Readout.Instance;
 
             keepRunning = true;
+            measuring = true;
 
             readout.Clean();
             Thread.Sleep(50); //!!! HARD CODED !!!
@@ -81,6 +103,8 @@ namespace ReadoutWinform
                 readout.Read(dcwrapper, dcwrapper.Length);                
             }
             rbcp.ToggleIQDataGate(false);
+
+            measuring = false;
             //StartButton.Enabled = true;
         }
 
@@ -98,6 +122,11 @@ namespace ReadoutWinform
             }
             freqTextBox1.Text = Frequency[0].ToString();            
             freqTextBox2.Text = Frequency[1].ToString();
+
+            // sweep panel
+            sweepStartFreqTextbox.Text = (Frequency[0] - 1e6).ToString();
+            sweepEndFreqTextbox.Text = (Frequency[0] + 1e6).ToString();
+            sweepCountTextbox.Text = sweepCount.ToString();
         }
 
         public void ReadSettings()
@@ -132,9 +161,37 @@ namespace ReadoutWinform
                 yAxisTop = displayqueue.Max();
                 yAxisBottom = displayqueue.Min();
             }            
-            var factor = (double)DataViewPanel.Height / (yAxisTop-yAxisBottom);
+            var factor = DataViewPanel.Height / (yAxisTop-yAxisBottom);
             var points = displayqueue.Select((v, i) => new Point(i*xAxisDisplaySpacing, (int)(DataViewPanel.Height - factor * (v - yAxisBottom))));
-            g.DrawLines(Pens.Black, points.ToArray());            
+            g.DrawLines(Pens.Blue, points.ToArray());
+
+            // Grids
+            var g_pen = new Pen(Color.Red, 1);
+            g_pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+            for(int i = 0; i < xGridNumber; i++)
+            {
+                var tmploc = (xGridTmpPos + DataViewPanel.Width / xGridNumber * i) % DataViewPanel.Width;
+                var red_tmploc = (tmploc + DataViewPanel.Width) % DataViewPanel.Width;
+                g.DrawLine(g_pen, new Point(red_tmploc, DataViewPanel.Height), new Point(red_tmploc, 0));
+            }
+            for(int i = 0; i < yGridNumber; i++)
+            {
+                var tmploc = DataViewPanel.Height / (yGridNumber + 1) * (i + 1);
+                var realval = (DataViewPanel.Height - tmploc) / factor + yAxisBottom;
+                g.DrawLine(g_pen, new Point(0, tmploc), new Point(DataViewPanel.Width, tmploc));
+                g.DrawString(realval.ToString(), gridFont, Brushes.Red, 0, tmploc + 10);
+            }
+        }
+
+        private void axDraw( object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            var vertical_top = new Point(DataViewPanel.Location.X - axisPanel.Location.X, 0);
+            var vertical_bottom = new Point(DataViewPanel.Location.X - axisPanel.Location.X, axisPanel.Height);
+            var horizontal_left = new Point(0, DataViewPanel.Height);
+            var horizontal_right = new Point(axisPanel.Width, DataViewPanel.Height);
+            g.DrawLine(Pens.Black, vertical_top, vertical_bottom);
+            g.DrawLine(Pens.Black, horizontal_left, horizontal_right);
         }
 
         private void DisplayQueueManipulation()
@@ -145,10 +202,13 @@ namespace ReadoutWinform
                 var tmpi = tmpcontainer.SDIQArray[0].Is[i];
                 var tmpq = tmpcontainer.SDIQArray[0].Qs[i];
                 displayqueue.Enqueue(Math.Sqrt(tmpi * tmpi + tmpq * tmpq));
-                while (displayqueue.Count > DataViewPanel.Width/xAxisDisplaySpacing)
+                while (displayqueue.Count > DataViewPanel.Width / xAxisDisplaySpacing)
+                {
                     displayqueue.Dequeue();
+                    xGridTmpPos -= xAxisDisplaySpacing;
+                }
             });
-            tmpcontainerpos = tmpcontainer.SDIndex;
+            tmpcontainerpos = tmpcontainer.SDIndex;            
         }
 
         private void DisplayRefreshTimer_Tick(object sender, EventArgs e)
@@ -178,6 +238,8 @@ namespace ReadoutWinform
 
         private void StartButton_Click(object sender, EventArgs e)
         {
+            if (measuring)
+                return;
             DisplayRefreshTimer.Start();
             Thread t = new Thread(new ThreadStart(startMeasurement));
             t.IsBackground = true;
@@ -245,6 +307,82 @@ namespace ReadoutWinform
                     }
                 }
             }
+        }
+
+        private void refreshButton_Click(object sender, EventArgs e)
+        {
+            ShowSettings();
+        }
+
+        private void sweepAbsDraw(object sender, PaintEventArgs e)
+        {
+            var sm = SweepManager.Instance;
+            if (sm.Is[0].Count <= 1)
+                return;
+            var g = e.Graphics;
+            var absval = sm.Is[0].Zip(sm.Qs[0], Tuple.Create).Select(iq => Math.Sqrt(iq.Item1 * iq.Item1 + iq.Item2 * iq.Item2));
+            var absmax = absval.Max();
+            var absmin = absval.Min();
+            var points = absval.Select((v, index) =>
+            {
+                var tmpfreq = sm.SweepFrequency[0][index];
+                var xpos = (tmpfreq - sweepStartFreq) / (sweepEndFreq - sweepStartFreq) * sweepAbsPanel.Width;
+                var ypos = (1- (v - absmin) / (absmax - absmin)) * sweepAbsPanel.Height;
+                return new Point((int)xpos, (int)ypos);
+            });
+            g.DrawLines(Pens.Black, points.ToArray());
+        }
+
+
+        private void sweepStartButton_Click(object sender, EventArgs e)
+        {
+            if (measuring)
+            {
+                MessageBox.Show("Blocked", "Blocked by other processes",
+                               MessageBoxButtons.OK,
+                               MessageBoxIcon.Error);
+                return;
+            }                
+
+            try
+            {
+                sweepStartFreq = Convert.ToDouble(sweepStartFreqTextbox.Text);
+                sweepEndFreq = Convert.ToDouble(sweepEndFreqTextbox.Text);
+                sweepCount = Convert.ToInt32(sweepCountTextbox.Text);
+            }
+            catch
+            {
+                MessageBox.Show("Parse error", "Parse error",
+                               MessageBoxButtons.OK,
+                               MessageBoxIcon.Error);
+                return;
+            }
+
+            var sm = SweepManager.Instance;
+            if(sm.Is[0].Count != 0)
+                sm.Clear();
+
+            sm.SetFrequency(new double[] { sweepStartFreq, Frequency[1] },
+                            new double[] { (sweepEndFreq - sweepStartFreq) / sweepCount, 0 },
+                            sweepCount);
+
+            sweepDisplayRefreshTimer.Enabled = true;
+            Thread t = new Thread(new ThreadStart(doSweep));
+            t.IsBackground = true;
+            t.Start(); 
+        }
+
+        private void doSweep()
+        {
+            var sm = SweepManager.Instance;
+            measuring = true;
+            sm.Sweep();
+            measuring = false;
+        }
+
+        private void sweepDisplayRefreshTimer_Tick(object sender, EventArgs e)
+        {
+            sweepAbsPanel.Refresh();
         }
     }
 }
