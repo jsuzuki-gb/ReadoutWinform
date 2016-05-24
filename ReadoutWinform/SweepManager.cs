@@ -83,10 +83,31 @@ namespace ReadOutTestConsole
                 datacontainer.Convert();
                 if (datacontainer.data[0] != 0xff)
                     throw new Exception("Header broken");
+
+
+                
+                
+
                 Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(ch =>
                 {
-                    Is[ch].Add(datacontainer.IQArray[ch].Is.Average());
-                    Qs[ch].Add(datacontainer.IQArray[ch].Qs.Average());
+                    // get median
+                    int halfIndex = datacontainer.ConvertedLength / 2;
+                    var sortedIs = datacontainer.IQArray[ch].Is.OrderBy(n => n);
+                    var sortedQs = datacontainer.IQArray[ch].Qs.OrderBy(n => n);
+                    double tmpi, tmpq;
+                    if ((halfIndex % 2) == 0)
+                    {
+                        tmpi = (sortedIs.ElementAt(halfIndex) + sortedIs.ElementAt(halfIndex - 1)) / 2.0;
+                        tmpq = (sortedQs.ElementAt(halfIndex) + sortedQs.ElementAt(halfIndex + 1)) / 2.0;
+                    }
+                    else
+                    {
+                        tmpi = sortedIs.ElementAt(halfIndex);
+                        tmpq = sortedQs.ElementAt(halfIndex);
+                    }
+                    // add
+                    Is[ch].Add(tmpi);
+                    Qs[ch].Add(tmpq);
                 });
 
                 if (Program.Verbose)
@@ -98,7 +119,8 @@ namespace ReadOutTestConsole
                                        Is[1][f_index],
                                        Qs[0][f_index],
                                        Qs[1][f_index]);
-                }                                                                        
+                }
+                                                                                        
             });            
         }        
     }

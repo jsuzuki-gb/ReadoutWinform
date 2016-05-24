@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using ReadOutTestConsole;
+using System.Numerics;
+using MathNet.Numerics;
 
 
 namespace ReadoutWinform
@@ -41,6 +43,13 @@ namespace ReadoutWinform
         private double sweepEndFreq;
         private int sweepCount;
 
+        private List<double> tmpIs;
+        private List<double> tmpQs;
+        private List<Complex> tmpCs;
+        private List<double> tmpabs;
+        private double sweepAbsMax;
+        private double sweepAbsMin;
+
         public MainForm()
         {
             Frequency = new List<double>();
@@ -71,6 +80,7 @@ namespace ReadoutWinform
             DataViewPanel.Paint += new PaintEventHandler(PanelDraw);
             axisPanel.Paint += new PaintEventHandler(axDraw);
             sweepAbsPanel.Paint += new PaintEventHandler(sweepAbsDraw);
+            sweepUpperIQPanel.Paint += new PaintEventHandler(sweepUpperIQDraw);
             ReadoutStatus.Text = "Ready";
         }
 
@@ -319,18 +329,30 @@ namespace ReadoutWinform
             var sm = SweepManager.Instance;
             if (sm.Is[0].Count <= 1)
                 return;
-            var g = e.Graphics;
-            var absval = sm.Is[0].Zip(sm.Qs[0], Tuple.Create).Select(iq => Math.Sqrt(iq.Item1 * iq.Item1 + iq.Item2 * iq.Item2));
-            var absmax = absval.Max();
-            var absmin = absval.Min();
-            var points = absval.Select((v, index) =>
+
+            var g = e.Graphics;            
+            var points = tmpabs.Select((v, index) =>
             {
                 var tmpfreq = sm.SweepFrequency[0][index];
                 var xpos = (tmpfreq - sweepStartFreq) / (sweepEndFreq - sweepStartFreq) * sweepAbsPanel.Width;
-                var ypos = (1- (v - absmin) / (absmax - absmin)) * sweepAbsPanel.Height;
+                var ypos = (1- (v - sweepAbsMin) / (sweepAbsMax - sweepAbsMin)) * sweepAbsPanel.Height;
                 return new Point((int)xpos, (int)ypos);
             });
             g.DrawLines(Pens.Black, points.ToArray());
+        }
+
+        private void sweepUpperIQDraw(object sender, PaintEventArgs e)
+        {
+            var sm = SweepManager.Instance;
+            if (sm.Is[0].Count <= 1)
+                return;
+
+            var g = e.Graphics;
+            var w = sweepUpperIQPanel.Width;
+            var h = sweepUpperIQPanel.Height;
+            var raw_points = tmpCs.Select(c => new Point((int)(c.Real / sweepAbsMax * w/2 + w/2),
+                                                         (int)(c.Imaginary / sweepAbsMax * h/2 + h/2)));
+            g.DrawLines(Pens.Blue, raw_points.ToArray());
         }
 
 
@@ -378,11 +400,48 @@ namespace ReadoutWinform
             measuring = true;
             sm.Sweep();
             measuring = false;
+            // for debugging
+            using(var sw = new System.IO.StreamWriter("sweep.dat"))
+            {
+                for (int i = 0; i < sm.SweepPoints; i++)
+                {
+                    sw.WriteLine("{0} {1} {2}", sm.SweepFrequency[0][i], sm.Is[0][i], sm.Qs[0][i]);
+                }
+            }            
         }
 
         private void sweepDisplayRefreshTimer_Tick(object sender, EventArgs e)
         {
+            var sm = SweepManager.Instance;
+            if (sm.Is[0].Count <= 1)
+                return;
+                        
+            tmpIs = sm.Is[0].ToList();
+            tmpQs = sm.Qs[0].ToList();
+            tmpCs = tmpIs.Zip(tmpQs, Tuple.Create).Select(iq => new Complex(iq.Item1, iq.Item2)).ToList();
+            tmpabs = tmpCs.Select(c => c.Magnitude).ToList();
+            sweepAbsMax = tmpabs.Max();
+            sweepAbsMin = tmpabs.Min();
+            // Draw
             sweepAbsPanel.Refresh();
+            sweepUpperIQPanel.Refresh();
+        }
+
+        private void Fit()
+        {
+            var sm = SweepManager.Instance;
+            if (sm.Is[0].Count <= 1)
+                return;
+
+
+        }
+
+        private void sweepFitButton_Click(object sender, EventArgs e)
+        {
+            Fit();
+            sweepUpperIQPanel.Refresh();
+            sweepBottomIQPanel.Refresh();
+            
         }
     }
 }

@@ -41,6 +41,12 @@
             this.MainTab = new System.Windows.Forms.TabControl();
             this.TODPage = new System.Windows.Forms.TabPage();
             this.axisPanel = new System.Windows.Forms.Panel();
+            this.sweepTab = new System.Windows.Forms.TabPage();
+            this.sweepCountTextbox = new System.Windows.Forms.TextBox();
+            this.sweepStartButton = new System.Windows.Forms.Button();
+            this.sweepEndFreqTextbox = new System.Windows.Forms.TextBox();
+            this.sweepStartFreqTextbox = new System.Windows.Forms.TextBox();
+            this.sweepAbsPanel = new System.Windows.Forms.Panel();
             this.SettingsPage = new System.Windows.Forms.TabPage();
             this.refreshButton = new System.Windows.Forms.Button();
             this.settingApplyButton = new System.Windows.Forms.Button();
@@ -60,22 +66,19 @@
             this.freqTextBox1 = new System.Windows.Forms.TextBox();
             this.freqTextBox2 = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
-            this.sweepTab = new System.Windows.Forms.TabPage();
-            this.sweepAbsPanel = new System.Windows.Forms.Panel();
-            this.sweepStartFreqTextbox = new System.Windows.Forms.TextBox();
-            this.sweepEndFreqTextbox = new System.Windows.Forms.TextBox();
-            this.sweepStartButton = new System.Windows.Forms.Button();
             this.sweepDisplayRefreshTimer = new System.Windows.Forms.Timer(this.components);
-            this.sweepCountTextbox = new System.Windows.Forms.TextBox();
+            this.sweepUpperIQPanel = new System.Windows.Forms.Panel();
+            this.sweepBottomIQPanel = new System.Windows.Forms.Panel();
             this.programBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.sweepFitButton = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.ROStatusStrip.SuspendLayout();
             this.MainTab.SuspendLayout();
             this.TODPage.SuspendLayout();
             this.axisPanel.SuspendLayout();
+            this.sweepTab.SuspendLayout();
             this.SettingsPage.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
-            this.sweepTab.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.programBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
@@ -186,6 +189,64 @@
             this.axisPanel.Name = "axisPanel";
             this.axisPanel.Size = new System.Drawing.Size(934, 594);
             this.axisPanel.TabIndex = 3;
+            // 
+            // sweepTab
+            // 
+            this.sweepTab.Controls.Add(this.sweepFitButton);
+            this.sweepTab.Controls.Add(this.sweepBottomIQPanel);
+            this.sweepTab.Controls.Add(this.sweepUpperIQPanel);
+            this.sweepTab.Controls.Add(this.sweepCountTextbox);
+            this.sweepTab.Controls.Add(this.sweepStartButton);
+            this.sweepTab.Controls.Add(this.sweepEndFreqTextbox);
+            this.sweepTab.Controls.Add(this.sweepStartFreqTextbox);
+            this.sweepTab.Controls.Add(this.sweepAbsPanel);
+            this.sweepTab.Location = new System.Drawing.Point(4, 28);
+            this.sweepTab.Name = "sweepTab";
+            this.sweepTab.Padding = new System.Windows.Forms.Padding(3);
+            this.sweepTab.Size = new System.Drawing.Size(946, 643);
+            this.sweepTab.TabIndex = 2;
+            this.sweepTab.Text = "Sweep";
+            this.sweepTab.UseVisualStyleBackColor = true;
+            // 
+            // sweepCountTextbox
+            // 
+            this.sweepCountTextbox.Location = new System.Drawing.Point(211, 359);
+            this.sweepCountTextbox.Name = "sweepCountTextbox";
+            this.sweepCountTextbox.Size = new System.Drawing.Size(100, 25);
+            this.sweepCountTextbox.TabIndex = 4;
+            // 
+            // sweepStartButton
+            // 
+            this.sweepStartButton.Location = new System.Drawing.Point(171, 404);
+            this.sweepStartButton.Name = "sweepStartButton";
+            this.sweepStartButton.Size = new System.Drawing.Size(188, 40);
+            this.sweepStartButton.TabIndex = 3;
+            this.sweepStartButton.Text = "Sweep start";
+            this.sweepStartButton.UseVisualStyleBackColor = true;
+            this.sweepStartButton.Click += new System.EventHandler(this.sweepStartButton_Click);
+            // 
+            // sweepEndFreqTextbox
+            // 
+            this.sweepEndFreqTextbox.Location = new System.Drawing.Point(336, 359);
+            this.sweepEndFreqTextbox.Name = "sweepEndFreqTextbox";
+            this.sweepEndFreqTextbox.Size = new System.Drawing.Size(160, 25);
+            this.sweepEndFreqTextbox.TabIndex = 2;
+            this.sweepEndFreqTextbox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // sweepStartFreqTextbox
+            // 
+            this.sweepStartFreqTextbox.Location = new System.Drawing.Point(20, 359);
+            this.sweepStartFreqTextbox.Name = "sweepStartFreqTextbox";
+            this.sweepStartFreqTextbox.Size = new System.Drawing.Size(160, 25);
+            this.sweepStartFreqTextbox.TabIndex = 1;
+            // 
+            // sweepAbsPanel
+            // 
+            this.sweepAbsPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sweepAbsPanel.Location = new System.Drawing.Point(20, 18);
+            this.sweepAbsPanel.Name = "sweepAbsPanel";
+            this.sweepAbsPanel.Size = new System.Drawing.Size(476, 326);
+            this.sweepAbsPanel.TabIndex = 0;
             // 
             // SettingsPage
             // 
@@ -395,68 +456,39 @@
             this.label8.TabIndex = 12;
             this.label8.Text = "X-axis display spacing";
             // 
-            // sweepTab
-            // 
-            this.sweepTab.Controls.Add(this.sweepCountTextbox);
-            this.sweepTab.Controls.Add(this.sweepStartButton);
-            this.sweepTab.Controls.Add(this.sweepEndFreqTextbox);
-            this.sweepTab.Controls.Add(this.sweepStartFreqTextbox);
-            this.sweepTab.Controls.Add(this.sweepAbsPanel);
-            this.sweepTab.Location = new System.Drawing.Point(4, 28);
-            this.sweepTab.Name = "sweepTab";
-            this.sweepTab.Padding = new System.Windows.Forms.Padding(3);
-            this.sweepTab.Size = new System.Drawing.Size(946, 643);
-            this.sweepTab.TabIndex = 2;
-            this.sweepTab.Text = "Sweep";
-            this.sweepTab.UseVisualStyleBackColor = true;
-            // 
-            // sweepAbsPanel
-            // 
-            this.sweepAbsPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.sweepAbsPanel.Location = new System.Drawing.Point(20, 18);
-            this.sweepAbsPanel.Name = "sweepAbsPanel";
-            this.sweepAbsPanel.Size = new System.Drawing.Size(476, 326);
-            this.sweepAbsPanel.TabIndex = 0;
-            // 
-            // sweepStartFreqTextbox
-            // 
-            this.sweepStartFreqTextbox.Location = new System.Drawing.Point(20, 359);
-            this.sweepStartFreqTextbox.Name = "sweepStartFreqTextbox";
-            this.sweepStartFreqTextbox.Size = new System.Drawing.Size(160, 25);
-            this.sweepStartFreqTextbox.TabIndex = 1;
-            // 
-            // sweepEndFreqTextbox
-            // 
-            this.sweepEndFreqTextbox.Location = new System.Drawing.Point(336, 359);
-            this.sweepEndFreqTextbox.Name = "sweepEndFreqTextbox";
-            this.sweepEndFreqTextbox.Size = new System.Drawing.Size(160, 25);
-            this.sweepEndFreqTextbox.TabIndex = 2;
-            this.sweepEndFreqTextbox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            // 
-            // sweepStartButton
-            // 
-            this.sweepStartButton.Location = new System.Drawing.Point(729, 18);
-            this.sweepStartButton.Name = "sweepStartButton";
-            this.sweepStartButton.Size = new System.Drawing.Size(188, 40);
-            this.sweepStartButton.TabIndex = 3;
-            this.sweepStartButton.Text = "Sweep start";
-            this.sweepStartButton.UseVisualStyleBackColor = true;
-            this.sweepStartButton.Click += new System.EventHandler(this.sweepStartButton_Click);
-            // 
             // sweepDisplayRefreshTimer
             // 
             this.sweepDisplayRefreshTimer.Tick += new System.EventHandler(this.sweepDisplayRefreshTimer_Tick);
             // 
-            // sweepCountTextbox
+            // sweepUpperIQPanel
             // 
-            this.sweepCountTextbox.Location = new System.Drawing.Point(211, 359);
-            this.sweepCountTextbox.Name = "sweepCountTextbox";
-            this.sweepCountTextbox.Size = new System.Drawing.Size(100, 25);
-            this.sweepCountTextbox.TabIndex = 4;
+            this.sweepUpperIQPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sweepUpperIQPanel.Location = new System.Drawing.Point(511, 18);
+            this.sweepUpperIQPanel.Name = "sweepUpperIQPanel";
+            this.sweepUpperIQPanel.Size = new System.Drawing.Size(300, 300);
+            this.sweepUpperIQPanel.TabIndex = 5;
+            // 
+            // sweepBottomIQPanel
+            // 
+            this.sweepBottomIQPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sweepBottomIQPanel.Location = new System.Drawing.Point(511, 324);
+            this.sweepBottomIQPanel.Name = "sweepBottomIQPanel";
+            this.sweepBottomIQPanel.Size = new System.Drawing.Size(300, 300);
+            this.sweepBottomIQPanel.TabIndex = 6;
             // 
             // programBindingSource
             // 
             this.programBindingSource.DataSource = typeof(ReadoutWinform.Program);
+            // 
+            // sweepFitButton
+            // 
+            this.sweepFitButton.Location = new System.Drawing.Point(836, 18);
+            this.sweepFitButton.Name = "sweepFitButton";
+            this.sweepFitButton.Size = new System.Drawing.Size(89, 41);
+            this.sweepFitButton.TabIndex = 0;
+            this.sweepFitButton.Text = "Fit";
+            this.sweepFitButton.UseVisualStyleBackColor = true;
+            this.sweepFitButton.Click += new System.EventHandler(this.sweepFitButton_Click);
             // 
             // MainForm
             // 
@@ -478,11 +510,11 @@
             this.MainTab.ResumeLayout(false);
             this.TODPage.ResumeLayout(false);
             this.axisPanel.ResumeLayout(false);
+            this.sweepTab.ResumeLayout(false);
+            this.sweepTab.PerformLayout();
             this.SettingsPage.ResumeLayout(false);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
-            this.sweepTab.ResumeLayout(false);
-            this.sweepTab.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.programBindingSource)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -530,6 +562,9 @@
         private System.Windows.Forms.Panel sweepAbsPanel;
         private System.Windows.Forms.Timer sweepDisplayRefreshTimer;
         private System.Windows.Forms.TextBox sweepCountTextbox;
+        private System.Windows.Forms.Panel sweepBottomIQPanel;
+        private System.Windows.Forms.Panel sweepUpperIQPanel;
+        private System.Windows.Forms.Button sweepFitButton;
     }
 }
 
