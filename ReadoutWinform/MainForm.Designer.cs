@@ -42,6 +42,9 @@
             this.TODPage = new System.Windows.Forms.TabPage();
             this.axisPanel = new System.Windows.Forms.Panel();
             this.sweepTab = new System.Windows.Forms.TabPage();
+            this.sweepFitButton = new System.Windows.Forms.Button();
+            this.sweepBottomIQPanel = new System.Windows.Forms.Panel();
+            this.sweepUpperIQPanel = new System.Windows.Forms.Panel();
             this.sweepCountTextbox = new System.Windows.Forms.TextBox();
             this.sweepStartButton = new System.Windows.Forms.Button();
             this.sweepEndFreqTextbox = new System.Windows.Forms.TextBox();
@@ -67,10 +70,9 @@
             this.freqTextBox2 = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
             this.sweepDisplayRefreshTimer = new System.Windows.Forms.Timer(this.components);
-            this.sweepUpperIQPanel = new System.Windows.Forms.Panel();
-            this.sweepBottomIQPanel = new System.Windows.Forms.Panel();
             this.programBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.sweepFitButton = new System.Windows.Forms.Button();
+            this.tmpIQPanel = new System.Windows.Forms.Panel();
+            this.DataViewPanel.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.ROStatusStrip.SuspendLayout();
             this.MainTab.SuspendLayout();
@@ -105,6 +107,7 @@
             // DataViewPanel
             // 
             this.DataViewPanel.BackColor = System.Drawing.Color.Transparent;
+            this.DataViewPanel.Controls.Add(this.tmpIQPanel);
             this.DataViewPanel.Location = new System.Drawing.Point(31, 0);
             this.DataViewPanel.Name = "DataViewPanel";
             this.DataViewPanel.Size = new System.Drawing.Size(900, 550);
@@ -207,6 +210,32 @@
             this.sweepTab.TabIndex = 2;
             this.sweepTab.Text = "Sweep";
             this.sweepTab.UseVisualStyleBackColor = true;
+            // 
+            // sweepFitButton
+            // 
+            this.sweepFitButton.Location = new System.Drawing.Point(836, 18);
+            this.sweepFitButton.Name = "sweepFitButton";
+            this.sweepFitButton.Size = new System.Drawing.Size(89, 41);
+            this.sweepFitButton.TabIndex = 0;
+            this.sweepFitButton.Text = "Fit";
+            this.sweepFitButton.UseVisualStyleBackColor = true;
+            this.sweepFitButton.Click += new System.EventHandler(this.sweepFitButton_Click);
+            // 
+            // sweepBottomIQPanel
+            // 
+            this.sweepBottomIQPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sweepBottomIQPanel.Location = new System.Drawing.Point(511, 324);
+            this.sweepBottomIQPanel.Name = "sweepBottomIQPanel";
+            this.sweepBottomIQPanel.Size = new System.Drawing.Size(300, 300);
+            this.sweepBottomIQPanel.TabIndex = 6;
+            // 
+            // sweepUpperIQPanel
+            // 
+            this.sweepUpperIQPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sweepUpperIQPanel.Location = new System.Drawing.Point(511, 18);
+            this.sweepUpperIQPanel.Name = "sweepUpperIQPanel";
+            this.sweepUpperIQPanel.Size = new System.Drawing.Size(300, 300);
+            this.sweepUpperIQPanel.TabIndex = 5;
             // 
             // sweepCountTextbox
             // 
@@ -460,35 +489,16 @@
             // 
             this.sweepDisplayRefreshTimer.Tick += new System.EventHandler(this.sweepDisplayRefreshTimer_Tick);
             // 
-            // sweepUpperIQPanel
-            // 
-            this.sweepUpperIQPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.sweepUpperIQPanel.Location = new System.Drawing.Point(511, 18);
-            this.sweepUpperIQPanel.Name = "sweepUpperIQPanel";
-            this.sweepUpperIQPanel.Size = new System.Drawing.Size(300, 300);
-            this.sweepUpperIQPanel.TabIndex = 5;
-            // 
-            // sweepBottomIQPanel
-            // 
-            this.sweepBottomIQPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.sweepBottomIQPanel.Location = new System.Drawing.Point(511, 324);
-            this.sweepBottomIQPanel.Name = "sweepBottomIQPanel";
-            this.sweepBottomIQPanel.Size = new System.Drawing.Size(300, 300);
-            this.sweepBottomIQPanel.TabIndex = 6;
-            // 
             // programBindingSource
             // 
             this.programBindingSource.DataSource = typeof(ReadoutWinform.Program);
             // 
-            // sweepFitButton
+            // tmpIQPanel
             // 
-            this.sweepFitButton.Location = new System.Drawing.Point(836, 18);
-            this.sweepFitButton.Name = "sweepFitButton";
-            this.sweepFitButton.Size = new System.Drawing.Size(89, 41);
-            this.sweepFitButton.TabIndex = 0;
-            this.sweepFitButton.Text = "Fit";
-            this.sweepFitButton.UseVisualStyleBackColor = true;
-            this.sweepFitButton.Click += new System.EventHandler(this.sweepFitButton_Click);
+            this.tmpIQPanel.Location = new System.Drawing.Point(697, 3);
+            this.tmpIQPanel.Name = "tmpIQPanel";
+            this.tmpIQPanel.Size = new System.Drawing.Size(200, 200);
+            this.tmpIQPanel.TabIndex = 0;
             // 
             // MainForm
             // 
@@ -503,6 +513,7 @@
             this.Text = "Test";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
+            this.DataViewPanel.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.ROStatusStrip.ResumeLayout(false);
@@ -565,6 +576,7 @@
         private System.Windows.Forms.Panel sweepBottomIQPanel;
         private System.Windows.Forms.Panel sweepUpperIQPanel;
         private System.Windows.Forms.Button sweepFitButton;
+        private System.Windows.Forms.Panel tmpIQPanel;
     }
 }
 
