@@ -13,8 +13,7 @@ namespace ReadOutTestConsole
     {
         private static Readout instance;
 
-        public const int BufferSize = 1024;
-        public const int HugeBufferSize = 268435456;
+        public const int BufferSize = 1024;        
         public IPEndPoint FPGAEndPoint { private set; get; }
         private TcpClient tcpclient;
         //private TcpListener tcplistener;
@@ -26,14 +25,10 @@ namespace ReadOutTestConsole
         {
             var FPGAAddress = IPAddress.Parse("192.168.10.16");
             var port = 24;
-            FPGAEndPoint = new IPEndPoint(FPGAAddress, port);
-            //tcplistener = new TcpListener(FPGAEndPoint);
-            //tcplistener = new TcpListener(FPGAAddress, 24);            
-            //tcpclient = new TcpClient(FPGAEndPoint);
+            FPGAEndPoint = new IPEndPoint(FPGAAddress, port);                                    
             buffer = new byte[BufferSize];
             for (int i = 0; i < BufferSize; i++)
-                buffer[i] = 0x00;
-            //huge_buffer = new byte[HugeBufferSize];
+                buffer[i] = 0x00;            
         }
         
         public static Readout Instance
@@ -51,10 +46,12 @@ namespace ReadOutTestConsole
         public void Connect()
         {
             tcpclient = new TcpClient();
-            tcpclient.SendTimeout = 100;
+            //tcpclient.SendTimeout = 100;
+            tcpclient.SendTimeout = 300;
             tcpclient.Connect(FPGAEndPoint);
             networkstream = tcpclient.GetStream();
-            networkstream.ReadTimeout = 100;             
+            //networkstream.ReadTimeout = 100;             
+            networkstream.ReadTimeout = 300;
         }
 
         public byte[] Read(int size)
@@ -64,14 +61,25 @@ namespace ReadOutTestConsole
 
             while (tmpsize > 0)
             {
-                var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
-                ms.Write(buffer, 0, ressize);
-                /*
-                if(Program.MY_DEBUG)
-                    Console.WriteLine("Ressize: {0}", ressize);
-                */
-                tmpsize -= ressize;
+                try
+                {
+                    var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
+                    ms.Write(buffer, 0, ressize);
+                    /*
+                    if(Program.MY_DEBUG)
+                        Console.WriteLine("Ressize: {0}", ressize);
+                    */
+                    tmpsize -= ressize;
+                } catch (Exception e)
+                {
+                    if (Program.MY_DEBUG)
+                    {
+                        Console.WriteLine("Connection failed, RETRY!");
+                        Console.WriteLine(e.ToString());
+                    }                        
+                }            
             }
+
             var ret_bytes = ms.ToArray();
             ms.Close();
 
@@ -83,11 +91,22 @@ namespace ReadOutTestConsole
             var tmpsize = length*Program.DataUnit;
             while (tmpsize > 0)
             {
-                var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
-                dc.Write(buffer, ressize);
-                //if (Program.MY_DEBUG)
+                try
+                {
+                    var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
+                    dc.Write(buffer, ressize);
+                    //if (Program.MY_DEBUG)
                     //Console.WriteLine("Ressize: {0}", ressize);
-                tmpsize -= ressize;
+                    tmpsize -= ressize;
+                } catch (Exception e)
+                {
+                    if (Program.MY_DEBUG)
+                    {
+                        Console.WriteLine("Connection failed, RETRY!");
+                        Console.WriteLine(e.ToString());
+                    }
+                }
+                
             }            
         }
         

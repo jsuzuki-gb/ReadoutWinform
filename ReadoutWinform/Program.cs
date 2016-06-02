@@ -15,7 +15,7 @@ namespace ReadoutWinform
         /// 
         public static bool GUI_DEBUG = false;
 
-        public static bool MY_DEBUG = false;
+        public static bool MY_DEBUG = true;
         public static int NumberOfChannels = 2;
         public static double ADCSampleRate = 200e6;
         public static double DownSampleRate = 2e5;
