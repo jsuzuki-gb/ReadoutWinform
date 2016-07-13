@@ -1,4 +1,4 @@
-﻿namespace ReadoutWinform
+﻿namespace ReadoutWinformK
 {
     partial class MainForm
     {
@@ -32,6 +32,7 @@
             this.StartButton = new System.Windows.Forms.Button();
             this.StopButton = new System.Windows.Forms.Button();
             this.DataViewPanel = new System.Windows.Forms.Panel();
+            this.tmpIQPanel = new System.Windows.Forms.Panel();
             this.DisplayRefreshTimer = new System.Windows.Forms.Timer(this.components);
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -70,8 +71,9 @@
             this.freqTextBox2 = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
             this.sweepDisplayRefreshTimer = new System.Windows.Forms.Timer(this.components);
+            this.writeTimer = new System.Windows.Forms.Timer(this.components);
             this.programBindingSource = new System.Windows.Forms.BindingSource(this.components);
-            this.tmpIQPanel = new System.Windows.Forms.Panel();
+            this.channelSelectorComboBox = new System.Windows.Forms.ComboBox();
             this.DataViewPanel.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.ROStatusStrip.SuspendLayout();
@@ -112,6 +114,13 @@
             this.DataViewPanel.Name = "DataViewPanel";
             this.DataViewPanel.Size = new System.Drawing.Size(900, 550);
             this.DataViewPanel.TabIndex = 2;
+            // 
+            // tmpIQPanel
+            // 
+            this.tmpIQPanel.Location = new System.Drawing.Point(697, 3);
+            this.tmpIQPanel.Name = "tmpIQPanel";
+            this.tmpIQPanel.Size = new System.Drawing.Size(200, 200);
+            this.tmpIQPanel.TabIndex = 0;
             // 
             // DisplayRefreshTimer
             // 
@@ -174,6 +183,7 @@
             // 
             // TODPage
             // 
+            this.TODPage.Controls.Add(this.channelSelectorComboBox);
             this.TODPage.Controls.Add(this.StartButton);
             this.TODPage.Controls.Add(this.StopButton);
             this.TODPage.Controls.Add(this.axisPanel);
@@ -489,16 +499,31 @@
             // 
             this.sweepDisplayRefreshTimer.Tick += new System.EventHandler(this.sweepDisplayRefreshTimer_Tick);
             // 
+            // writeTimer
+            // 
+            this.writeTimer.Interval = 10000;
+            this.writeTimer.Tick += new System.EventHandler(this.writeTimer_Tick);
+            // 
             // programBindingSource
             // 
-            this.programBindingSource.DataSource = typeof(ReadoutWinform.Program);
+            this.programBindingSource.DataSource = typeof(ReadoutWinformK.Program);
             // 
-            // tmpIQPanel
+            // channelSelectorComboBox
             // 
-            this.tmpIQPanel.Location = new System.Drawing.Point(697, 3);
-            this.tmpIQPanel.Name = "tmpIQPanel";
-            this.tmpIQPanel.Size = new System.Drawing.Size(200, 200);
-            this.tmpIQPanel.TabIndex = 0;
+            this.channelSelectorComboBox.FormattingEnabled = true;
+            this.channelSelectorComboBox.Items.AddRange(new object[] {
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"});
+            this.channelSelectorComboBox.Location = new System.Drawing.Point(236, 11);
+            this.channelSelectorComboBox.Name = "channelSelectorComboBox";
+            this.channelSelectorComboBox.Size = new System.Drawing.Size(121, 26);
+            this.channelSelectorComboBox.TabIndex = 4;
             // 
             // MainForm
             // 
@@ -577,6 +602,8 @@
         private System.Windows.Forms.Panel sweepUpperIQPanel;
         private System.Windows.Forms.Button sweepFitButton;
         private System.Windows.Forms.Panel tmpIQPanel;
+        private System.Windows.Forms.Timer writeTimer;
+        private System.Windows.Forms.ComboBox channelSelectorComboBox;
     }
 }
 

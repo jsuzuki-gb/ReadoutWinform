@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using ReadoutWinform;
+using ReadoutWinformK;
 
 namespace ReadOutTestConsole
 {
@@ -104,36 +104,38 @@ namespace ReadOutTestConsole
 
     class DataUtils
     {
-        public static long BEByte7ToLong(byte[] d, int start_index)
+        public static long BEByte6ToLong(byte[] d, int start_index)
         {
             byte[] done = new byte[8];
-            if ((d[start_index] & 0x80) == 0x80)
+            if ((d[start_index + 5] & 0x80) == 0x80)
             {
-                done[0] = 0xff;
-                Array.Copy(d, start_index, done, 1, 7);
+                done[7] = 0xff; done[6] = 0xff;
+                Array.Copy(d, start_index, done, 0, 6);
             }
             else
             {
-                done[0] = 0x00;
-                Array.Copy(d, start_index, done, 1, 7);
+                done[7] = 0x00; done[6] = 0x00;
+                Array.Copy(d, start_index, done, 0, 6);
             }
-            return System.BitConverter.ToInt64(done.Reverse().ToArray(), 0);
+            //return System.BitConverter.ToInt64(done.Reverse().ToArray(), 0);
+            return System.BitConverter.ToInt64(done, 0);
         }
 
         public static long BEByte5ToLong(byte[] d, int start_index)
         {
             byte[] done = new byte[8];
-            if ((d[start_index] & 0x80) == 0x80)
+            if ((d[start_index + 4] & 0x80) == 0x80)
             {
-                done[0] = 0xff; done[1] = 0xff; done[2] = 0xff;
-                Array.Copy(d, start_index, done, 3, 5);
+                done[7] = 0xff; done[6] = 0xff; done[5] = 0xff;
+                Array.Copy(d, start_index, done, 0, 5);
             }
             else
             {
-                done[0] = 0x00; done[0] = 0x00; done[0] = 0x00;
-                Array.Copy(d, start_index, done, 3, 5);
+                done[7] = 0x00; done[6] = 0x00; done[5] = 0x00;
+                Array.Copy(d, start_index, done, 0, 5);
             }
-            return System.BitConverter.ToInt64(done.Reverse().ToArray(), 0);
+            //return System.BitConverter.ToInt64(done.Reverse().ToArray(), 0);
+            return System.BitConverter.ToInt64(done, 0);
         }
 
         public static double[][] BinaryToIQ(byte[] d, int offset)
@@ -142,8 +144,10 @@ namespace ReadOutTestConsole
             var Qs = new double[Program.NumberOfChannels];
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i =>
             {
-                Is[i] = BEByte7ToLong(d, offset + 6 + 7 * Program.NumberOfChannels * i) / Program.DownSampleRate;
-                Qs[i] = BEByte7ToLong(d, offset + 13 + 7 * Program.NumberOfChannels * i) / Program.DownSampleRate;
+                //Is[i] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                //Qs[i] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
+                Qs[i] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                Is[i] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
             });
             return new double[][] { Is, Qs };
         }
@@ -152,8 +156,10 @@ namespace ReadOutTestConsole
         {
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i =>
             {
-                target_I[i,target_offset] = BEByte7ToLong(d, offset + 6 + 7 * Program.NumberOfChannels * i) / Program.DownSampleRate;
-                target_Q[i,target_offset] = BEByte7ToLong(d, offset + 13 + 7 * Program.NumberOfChannels * i) / Program.DownSampleRate;
+                //target_I[i, target_offset] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                //target_Q[i, target_offset] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
+                target_Q[i, target_offset] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                target_I[i, target_offset] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
             });
         }
 
@@ -161,8 +167,10 @@ namespace ReadOutTestConsole
         {
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i =>
             {
-                IQArray[i].Is.Add(BEByte7ToLong(d, offset + 6 + 7 * Program.NumberOfChannels * i) / Program.DownSampleRate);
-                IQArray[i].Qs.Add(BEByte7ToLong(d, offset + 13 + 7 * Program.NumberOfChannels * i) / Program.DownSampleRate);                
+                //IQArray[i].Is.Add(BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate);
+                //IQArray[i].Qs.Add(BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate);
+                IQArray[i].Qs.Add(BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate);
+                IQArray[i].Is.Add(BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate);
             });
         }
 

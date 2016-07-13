@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using ReadoutWinform;
+using ReadoutWinformK;
 
 namespace ReadOutTestConsole
 {
@@ -48,6 +48,7 @@ namespace ReadOutTestConsole
             tcpclient = new TcpClient();
             //tcpclient.SendTimeout = 100;
             tcpclient.SendTimeout = 300;
+            //tcpclient.SendTimeout = 1000;
             tcpclient.Connect(FPGAEndPoint);
             networkstream = tcpclient.GetStream();
             //networkstream.ReadTimeout = 100;             

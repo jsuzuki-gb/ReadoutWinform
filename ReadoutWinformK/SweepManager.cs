@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ReadoutWinform;
+using ReadoutWinformK;
 
 namespace ReadOutTestConsole
 {
@@ -69,24 +69,27 @@ namespace ReadOutTestConsole
             {
                 // ONLY VALID FOR 2 CHANNEL
                 datacontainer = new DataContainer(NumberOfSamples);
-                ow.SetFrequency(0, SweepFrequency[0][f_index], 45.0, false);
-                ow.SetFrequency(1, SweepFrequency[1][f_index], 225.0, true);
+                for(int i = 0; i < Program.NumberOfChannels; i++)
+                {
+                    ow.SetFrequency(i, SweepFrequency[0][f_index], 0, false);
+                }                
+                //ow.SetFrequency(1, SweepFrequency[1][f_index], 225.0, true);
 
                 readout.Clean();
                 System.Threading.Thread.Sleep(50);
                 readout.Clean();
 
-                rbcp.ToggleIQDataGate(true);                
+                rbcp.IQDataGate(true);                
                 //readout.Read(NumberOfSamples * Program.DataUnit);
                 readout.Read(datacontainer, NumberOfSamples);
-                rbcp.ToggleIQDataGate(false);
+                rbcp.IQDataGate(false);
+                // tmp mod
+                rbcp.FPGAStart(false);
+                rbcp.FPGAStart(true);
+                //
                 datacontainer.Convert();
                 if (datacontainer.data[0] != 0xff)
-                    throw new Exception("Header broken");
-
-
-                
-                
+                    throw new Exception("Header broken");                                
 
                 Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(ch =>
                 {

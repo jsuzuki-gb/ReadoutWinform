@@ -13,7 +13,7 @@ using System.Numerics;
 using MathNet.Numerics;
 
 
-namespace ReadoutWinform
+namespace ReadoutWinformK
 {
     public partial class MainForm : Form
     {
@@ -27,7 +27,7 @@ namespace ReadoutWinform
 
         private bool keepRunning;
         private bool measuring;
-        private const int dc_length = 1000;
+        private const int dc_length = 4096;
 
         // TOD Display settings
         private int xAxisDisplaySpacing;
@@ -60,6 +60,10 @@ namespace ReadoutWinform
         private List<Complex> tmpCs_centered;
         private bool angle_parameter_set = false;
 
+        // for writing
+        private string directory_path;
+        private DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).ToLocalTime();
+
         // for debug
         private Complex fix_C;
 
@@ -80,11 +84,13 @@ namespace ReadoutWinform
             xGridTmpPos = 0;
 
             sweepCount = 101;
-            
+
 
             // For DEBUG
-            Frequency.Add(6.55e6); // resonance
-            Frequency.Add(10e6); // off resonance
+            //Frequency.Add(6.55e6); // resonance
+            //Frequency.Add(10e6); // off resonance
+            //Frequency.AddRange(new double[]{-57.39e6, -41.09e6, -21.8e6, -14.09e6,  -8.19e6,   7.41e6,  33.11e6,  49.71e6});
+            Frequency.AddRange(new double[] { -57.3e6, -40.95e6, -21.75e6, -14e6, -8.11e6, 7.48e6, 33.25e6, 49.84e6 });
             // For DEBUG FIN
             InitializeComponent();
             axisPanel.Controls.Add(DataViewPanel);            
@@ -100,6 +106,9 @@ namespace ReadoutWinform
             sweepUpperIQPanel.Paint += new PaintEventHandler(sweepUpperIQDraw);
             sweepBottomIQPanel.Paint += new PaintEventHandler(sweepBottomIQDraw);
             
+            // write
+            directory_path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "tmpdata20160713");
+
             ReadoutStatus.Text = "Ready";
         }
 
@@ -107,23 +116,29 @@ namespace ReadoutWinform
         private void startMeasurement()
         {            
             if (measuring)
-                return;            
-                        
-            var ow = OutputWave.Instance;
-            ow.SetFrequency(0, Frequency[0], 45.0, false);
-            ow.SetFrequency(1, Frequency[1], 225.0, true);
-
+                return;
+            
             var rbcp = RBCP.Instance;
-            var readout = Readout.Instance;
+            var readout = Readout.Instance;                                   
+
+            var ow = OutputWave.Instance;
+            for(int i = 0; i < Program.NumberOfChannels; i++)
+            {
+                //ow.SetFrequency(i, Frequency[0], 0); 
+                ow.SetFrequency(i, Frequency[i % 8], 0);
+            }
 
             keepRunning = true;
             measuring = true;
-
+            
             readout.Clean();
             Thread.Sleep(50); //!!! HARD CODED !!!
+            readout.Clean();            
+            Thread.Sleep(50); //!!! HARD CODED !!!
             readout.Clean();
-
-            rbcp.ToggleIQDataGate(true);
+            
+            // datagate open
+            rbcp.IQDataGate(true);
             while (keepRunning)
             {                
                 var dcwrapper = new DCWrapper(dc_length);
@@ -132,7 +147,9 @@ namespace ReadoutWinform
                 dcwrapper.StartDateTime = DateTime.Now;                                
                 readout.Read(dcwrapper, dcwrapper.Length);                
             }
-            rbcp.ToggleIQDataGate(false);
+            rbcp.IQDataGate(false);
+            rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x00 });
+            rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x01 });
 
             measuring = false;
             //StartButton.Enabled = true;
@@ -196,9 +213,14 @@ namespace ReadoutWinform
             g.DrawLines(Pens.Blue, points.ToArray());
             if (angle_parameter_set && anglequeue.Count > 1)
             {
-                var anglefactor = DataViewPanel.Height / Math.PI / 2;
-                var angleoffset = DataViewPanel.Height / 2;
-                var anglepoints = anglequeue.Select((v, i) => new Point(i * xAxisDisplaySpacing, (int)(DataViewPanel.Height - anglefactor * v - angleoffset)));
+                var anglemax = anglequeue.Max();
+                var anglemin = anglequeue.Min();
+                //var anglefactor = DataViewPanel.Height / Math.PI / 2;
+                var anglefactor = DataViewPanel.Height / (anglemax - anglemin);
+                //var angleoffset = DataViewPanel.Height / 2;
+
+                //var anglepoints = anglequeue.Select((v, i) => new Point(i * xAxisDisplaySpacing, (int)(DataViewPanel.Height - anglefactor * v - angleoffset)));
+                var anglepoints = anglequeue.Select((v, i) => new Point(i * xAxisDisplaySpacing, (int)(DataViewPanel.Height - anglefactor * (v - anglemin))));
                 g.DrawLines(Pens.Green, anglepoints.ToArray());
             }
 
@@ -264,8 +286,11 @@ namespace ReadoutWinform
             var newpoints = tmpcontainer.SDIndex - tmpcontainerpos;
             Enumerable.Range(tmpcontainerpos, newpoints).ToList().ForEach(i =>
             {
-                var tmpi = tmpcontainer.SDIQArray[0].Is[i];
-                var tmpq = tmpcontainer.SDIQArray[0].Qs[i];
+                var tmpch = Convert.ToInt32(channelSelectorComboBox.Text)-1;                
+                var tmpi = tmpcontainer.SDIQArray[tmpch].Is[i];
+                var tmpq = tmpcontainer.SDIQArray[tmpch].Qs[i];
+                //var tmpi = tmpcontainer.SDIQArray[0].Is[i];
+                //var tmpq = tmpcontainer.SDIQArray[0].Qs[i];
                 var tmpc = new Complex(tmpi, tmpq);
                 displayqueue.Enqueue(tmpc.Magnitude);
                 while (displayqueue.Count > DataViewPanel.Width / xAxisDisplaySpacing)
@@ -294,6 +319,8 @@ namespace ReadoutWinform
 
         private void DisplayRefreshTimer_Tick(object sender, EventArgs e)
         {
+            if (Program.DataContainers.Count == 0)
+                return;
             var nowcontainer = (DCWrapper)Program.DataContainers.Last();
             if (tmpcontainer == null)
                 tmpcontainer = nowcontainer;
@@ -322,6 +349,7 @@ namespace ReadoutWinform
             if (measuring)
                 return;
             DisplayRefreshTimer.Start();
+            writeTimer.Start();
             Thread t = new Thread(new ThreadStart(startMeasurement));
             t.IsBackground = true;
             t.Start();
@@ -332,6 +360,7 @@ namespace ReadoutWinform
         {
             keepRunning = false;
             ReadoutStatus.Text = "Stopped";
+            writeTimer.Stop();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -345,6 +374,7 @@ namespace ReadoutWinform
             {
                 RBCP.Instance.Close();
                 Readout.Instance.Close();
+                writer(count: 0);
             }            
         }
 
@@ -599,6 +629,47 @@ namespace ReadoutWinform
             Fit();
             sweepUpperIQPanel.Refresh();
             sweepBottomIQPanel.Refresh();            
+        }
+
+        private bool writing = false;
+
+        private void writeTimer_Tick(object sender, EventArgs e)
+        {
+            if (!writing)
+            {
+                if(Program.MY_DEBUG)
+                    Console.WriteLine("Start to write!");
+                writing = true;
+                Thread t = new Thread(new ThreadStart(ringwrite));
+                t.IsBackground = true;
+                t.Start();
+            }            
+        }
+
+        private void ringwrite()
+        {
+            writer(count: 10);
+        }
+
+        private void writer(int count = 10)
+        {
+            if(Program.MY_DEBUG)
+                Console.WriteLine("We have {0} containers", Program.DataContainers.Count);
+
+            while (Program.DataContainers.Count > count)
+            {
+                if(Program.MY_DEBUG)
+                    Console.WriteLine("tmpcount: {0}", Program.DataContainers.Count);
+                var dc = Program.DataContainers[0];
+                var dt = dc.StartDateTime;
+                var file_path = System.IO.Path.Combine(directory_path, "tmpdata" + ((int)(dt - epoch).TotalSeconds).ToString() + ".dat");
+                using(var sw = new System.IO.StreamWriter(file_path))
+                {                                        
+                    dc.Express().ForEach(line => sw.WriteLine(line));                                        
+                }
+                Program.DataContainers.RemoveAt(0);
+            }
+            writing = false;
         }
     }
 }

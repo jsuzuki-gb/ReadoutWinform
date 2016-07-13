@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using ReadoutWinform;
+using ReadoutWinformK;
 
 namespace ReadOutTestConsole
 {
@@ -101,11 +101,14 @@ namespace ReadOutTestConsole
 
         public void DDSEnable()
         {
+            /*
             byte[] address = {0x70, 0x00, 0x00, 0x00};
             byte[] data = {0x00};
             Write(address, data);
+            */
         }
 
+        /*
         public void ToggleIQDataGate(bool open)
         {
             byte[] read_address = {0x61, 0x00, 0x00, 0x00};
@@ -125,6 +128,16 @@ namespace ReadOutTestConsole
             }                
             else
                 Console.WriteLine("Nothing to be done");            
+        }
+        */
+        public void IQDataGate(bool open)
+        {
+            Write(new byte[] { 0x00, 0x00, 0x04, 0x80 }, BitConverter.GetBytes(open));
+        }
+
+        public void FPGAStart(bool start)
+        {
+            Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, BitConverter.GetBytes(start));
         }
 
         public static Tuple<byte[], byte[]> Interpret(byte[] msg)

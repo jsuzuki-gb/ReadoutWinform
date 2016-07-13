@@ -7,8 +7,8 @@
     <ProjectGuid>{E54DC50C-F24D-4F05-8BB3-F883A5677132}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ReadoutWinform</RootNamespace>
-    <AssemblyName>ReadoutWinform</AssemblyName>
+    <RootNamespace>ReadoutWinformK</RootNamespace>
+    <AssemblyName>ReadoutWinformK</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -31,6 +31,10 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MathNet.Numerics, Version=3.11.1.0, Culture=neutral, processorArchitecture=MSIL">
@@ -78,6 +82,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="packages.config" />
     <None Include="Program.datasource" />

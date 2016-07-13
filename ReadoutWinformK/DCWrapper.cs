@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ReadOutTestConsole;
 
-namespace ReadoutWinform
+namespace ReadoutWinformK
 {
     class DCWrapper : DataContainer
     {
@@ -49,6 +49,7 @@ namespace ReadoutWinform
                 return;
             for (; SDIndex < ConvertedLength / SDCount; SDIndex++)
             {
+                //Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => {
                 Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => {
                     double[] iq;
                     if (useMedian)
