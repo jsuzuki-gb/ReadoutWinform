@@ -22,10 +22,12 @@ namespace ReadOutTestConsole
     class DataContainer
     {
         public byte[] data;
-        public int WriteIndex { private set; get; }
+        public int WriteIndex { set; get; }
         public int Length { private set; get; }
 
         public DateTime StartDateTime;
+
+        public List<int> ResSizeList;
         
         //public double[,] Is;
         //public double[,] Qs;
@@ -53,7 +55,9 @@ namespace ReadOutTestConsole
             //Qs = new double[Program.NumberOfChannels, length];
             IQArray = new IQInfo[Program.NumberOfChannels];
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => { IQArray[i] = new IQInfo(); });
-            TSList = new List<long>();        
+            TSList = new List<long>();
+
+            ResSizeList = new List<int>();
         }
 
         public void Write(byte[] buff, int byte_length)
@@ -70,6 +74,8 @@ namespace ReadOutTestConsole
             for(;ConvertedLength < tmpdl; ConvertedLength++)
             {
                 //DataUtils.BinaryToIQ(data, ConvertedLength * Program.DataUnit, Is, Qs, ConvertedLength);
+                if (data[ConvertedLength * Program.DataUnit] != 0xFF)
+                    throw new Exception("Header broken.");
                 DataUtils.BinaryToIQ(data, ConvertedLength * Program.DataUnit, IQArray);
                 TSList.Add(DataUtils.BEByte5ToLong(data, ConvertedLength * Program.DataUnit + 1));
             }
@@ -92,13 +98,34 @@ namespace ReadOutTestConsole
             var expression = Enumerable.Range(0, ConvertedLength).Select(i =>
             {
                 List<string> ts = new List<string> { TSList[i].ToString() } ;
+                /*
                 List<string> Is_str = Enumerable.Range(0, Program.NumberOfChannels).Select(ch => IQArray[ch].Is[i].ToString()).ToList();
                 List<string> Qs_str = Enumerable.Range(0, Program.NumberOfChannels).Select(ch => IQArray[ch].Qs[i].ToString()).ToList();
                 ts.AddRange(Is_str); ts.AddRange(Qs_str);
+                */
+                Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(ch =>
+                {
+                    ts.Add(IQArray[ch].Is[i].ToString());
+                    ts.Add(IQArray[ch].Qs[i].ToString());
+                });
                 return string.Join(" ", ts);
             });
 
             return expression.ToList();
+        }
+
+        public void WriteBinary(BinaryWriter bw)
+        {
+            Convert();
+            for(int i = 0; i < ConvertedLength; i++)
+            {
+                bw.Write(TSList[i]);
+                Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(ch =>
+                {
+                    bw.Write(IQArray[ch].Is[i]);
+                    bw.Write(IQArray[ch].Qs[i]);
+                });
+            }
         }
     }
 
@@ -144,10 +171,10 @@ namespace ReadOutTestConsole
             var Qs = new double[Program.NumberOfChannels];
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i =>
             {
-                //Is[i] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
-                //Qs[i] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
-                Qs[i] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
-                Is[i] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
+                Is[i] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                Qs[i] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
+                //Qs[i] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                //Is[i] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
             });
             return new double[][] { Is, Qs };
         }
@@ -156,10 +183,10 @@ namespace ReadOutTestConsole
         {
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i =>
             {
-                //target_I[i, target_offset] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
-                //target_Q[i, target_offset] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
-                target_Q[i, target_offset] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
-                target_I[i, target_offset] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
+                target_I[i, target_offset] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                target_Q[i, target_offset] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
+                //target_Q[i, target_offset] = BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate;
+                //target_I[i, target_offset] = BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate;
             });
         }
 
@@ -167,10 +194,10 @@ namespace ReadOutTestConsole
         {
             Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i =>
             {
-                //IQArray[i].Is.Add(BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate);
-                //IQArray[i].Qs.Add(BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate);
-                IQArray[i].Qs.Add(BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate);
-                IQArray[i].Is.Add(BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate);
+                IQArray[i].Is.Add(BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate);
+                IQArray[i].Qs.Add(BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate);
+                //IQArray[i].Qs.Add(BEByte6ToLong(d, offset + 6 + 6 * 2 * i) / Program.DownSampleRate);
+                //IQArray[i].Is.Add(BEByte6ToLong(d, offset + 12 + 6 * 2 * i) / Program.DownSampleRate);
             });
         }
 

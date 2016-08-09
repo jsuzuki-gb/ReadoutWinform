@@ -13,7 +13,8 @@ namespace ReadOutTestConsole
     {
         private static Readout instance;
 
-        public const int BufferSize = 1024;        
+        //public const int BufferSize = 1024;        
+        public const int BufferSize = 1024*16;
         public IPEndPoint FPGAEndPoint { private set; get; }
         private TcpClient tcpclient;
         //private TcpListener tcplistener;
@@ -76,7 +77,7 @@ namespace ReadOutTestConsole
                     if (Program.MY_DEBUG)
                     {
                         Console.WriteLine("Connection failed, RETRY!");
-                        Console.WriteLine(e.ToString());
+                        Console.WriteLine(e.ToString());                        
                     }                        
                 }            
             }
@@ -92,21 +93,25 @@ namespace ReadOutTestConsole
             var tmpsize = length*Program.DataUnit;
             while (tmpsize > 0)
             {
-                try
-                {
-                    var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
-                    dc.Write(buffer, ressize);
-                    //if (Program.MY_DEBUG)
-                    //Console.WriteLine("Ressize: {0}", ressize);
-                    tmpsize -= ressize;
-                } catch (Exception e)
-                {
-                    if (Program.MY_DEBUG)
-                    {
-                        Console.WriteLine("Connection failed, RETRY!");
-                        Console.WriteLine(e.ToString());
-                    }
-                }
+                var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
+                dc.Write(buffer, ressize);
+                //if (Program.MY_DEBUG)
+                //Console.WriteLine("Ressize: {0}", ressize);
+                dc.ResSizeList.Add(ressize);
+                tmpsize -= ressize;
+            }            
+        }
+
+        public void Read2(DataContainer dc)
+        {
+            var tmpindex = 0;
+            var length = dc.data.Length;
+            while (tmpindex < length)
+            {
+                var ressize = networkstream.Read(dc.data, tmpindex, length-tmpindex);
+                dc.ResSizeList.Add(ressize);
+                tmpindex += ressize;
+                dc.WriteIndex = tmpindex;
                 
             }            
         }

@@ -27,7 +27,7 @@ namespace ReadoutWinformK
 
         private bool keepRunning;
         private bool measuring;
-        private const int dc_length = 4096;
+        private const int dc_length = 32768;
 
         // TOD Display settings
         private int xAxisDisplaySpacing;
@@ -107,22 +107,21 @@ namespace ReadoutWinformK
             sweepBottomIQPanel.Paint += new PaintEventHandler(sweepBottomIQDraw);
             
             // write
-            directory_path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "tmpdata20160713");
+            directory_path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "tmpdata20160809");
 
             ReadoutStatus.Text = "Ready";
         }
 
-
-        private void startMeasurement()
-        {            
+        private void setupMeasurement()
+        {
             if (measuring)
                 return;
-            
+
             var rbcp = RBCP.Instance;
-            var readout = Readout.Instance;                                   
+            var readout = Readout.Instance;
 
             var ow = OutputWave.Instance;
-            for(int i = 0; i < Program.NumberOfChannels; i++)
+            for (int i = 0; i < Program.NumberOfChannels; i++)
             {
                 //ow.SetFrequency(i, Frequency[0], 0); 
                 ow.SetFrequency(i, Frequency[i % 8], 0);
@@ -130,22 +129,62 @@ namespace ReadoutWinformK
 
             keepRunning = true;
             measuring = true;
-            
+
             readout.Clean();
             Thread.Sleep(50); //!!! HARD CODED !!!
-            readout.Clean();            
+            readout.Clean();
             Thread.Sleep(50); //!!! HARD CODED !!!
             readout.Clean();
-            
+        }
+
+        private void startMeasurement()
+        {
+            var rbcp = RBCP.Instance;
+            var readout = Readout.Instance;
+
             // datagate open
             rbcp.IQDataGate(true);
             while (keepRunning)
-            {                
-                var dcwrapper = new DCWrapper(dc_length);
-                dcwrapper.SDCount = Program.SoftwareDownsampleCount;
-                Program.DataContainers.Add(dcwrapper);
-                dcwrapper.StartDateTime = DateTime.Now;                                
-                readout.Read(dcwrapper, dcwrapper.Length);                
+            {
+                try
+                {
+                    var dcwrapper = new DCWrapper(dc_length);
+                    dcwrapper.SDCount = Program.SoftwareDownsampleCount;
+                    Program.DataContainers.Add(dcwrapper);
+                    if (stopRefresh)
+                        stopRefresh = false;
+                    dcwrapper.StartDateTime = DateTime.Now;
+                    //readout.Read(dcwrapper, dcwrapper.Length);
+                    readout.Read2(dcwrapper);
+                } catch (Exception e)
+                {
+                    Console.WriteLine("Connection error occured....RETRY");
+                    Console.WriteLine(e.Message);
+                    // DEBUG
+                    Thread.Sleep(10000);
+                    Console.WriteLine("going to start connection");
+                    readout.Close();                
+                    readout.Connect();
+                    Console.WriteLine("connection established");
+                    // DEBUG
+                    rbcp.IQDataGate(false);
+                    rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x00 });
+                    rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x01 });
+                    var ow = OutputWave.Instance;
+                    for (int i = 0; i < Program.NumberOfChannels; i++)
+                    {
+                        //ow.SetFrequency(i, Frequency[0], 0); 
+                        ow.SetFrequency(i, Frequency[i % 8], 0);
+                    }
+
+                    readout.Clean();
+                    Thread.Sleep(50); //!!! HARD CODED !!!
+                    readout.Clean();
+                    Thread.Sleep(50); //!!! HARD CODED !!!
+                    readout.Clean();
+                    rbcp.IQDataGate(true);
+                }
+                
             }
             rbcp.IQDataGate(false);
             rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x00 });
@@ -153,6 +192,7 @@ namespace ReadoutWinformK
 
             measuring = false;
             //StartButton.Enabled = true;
+            DisplayRefreshTimer.Stop();
         }
 
         public void ShowSettings()
@@ -317,16 +357,37 @@ namespace ReadoutWinformK
             tmpcontainerpos = tmpcontainer.SDIndex;            
         }
 
+        private bool stopRefresh = false;
+
         private void DisplayRefreshTimer_Tick(object sender, EventArgs e)
         {
             if (Program.DataContainers.Count == 0)
                 return;
+            if (stopRefresh)
+                return;
             var nowcontainer = (DCWrapper)Program.DataContainers.Last();
             if (tmpcontainer == null)
                 tmpcontainer = nowcontainer;
+            try
+            {
+                tmpcontainer.Convert();
+            } catch (Exception err)
+            {
+                keepRunning = false;
+                Console.WriteLine(err.ToString());
+                DisplayRefreshTimer.Stop();
+                
+                Program.BrokenContainers.Add(tmpcontainer);
+                Program.DataContainers.Remove(tmpcontainer);
+
+                tmpcontainer = null;
+                tmpcontainerpos = 0;
+                stopRefresh = true;
+                return;
+            }
             
-            tmpcontainer.Convert();
-            tmpcontainer.SoftwareDownsample(true);
+            //tmpcontainer.SoftwareDownsample(true);
+            tmpcontainer.SoftwareDownsample(false);
             bool toberefreshed = false;
             if(tmpcontainer.SDIndex != tmpcontainerpos)
             {
@@ -348,8 +409,9 @@ namespace ReadoutWinformK
         {
             if (measuring)
                 return;
-            DisplayRefreshTimer.Start();
+            setupMeasurement();
             writeTimer.Start();
+            DisplayRefreshTimer.Start();
             Thread t = new Thread(new ThreadStart(startMeasurement));
             t.IsBackground = true;
             t.Start();
@@ -375,6 +437,22 @@ namespace ReadoutWinformK
                 RBCP.Instance.Close();
                 Readout.Instance.Close();
                 writer(count: 0);
+                foreach(var dc in Program.BrokenContainers)
+                {
+                    var dt = dc.StartDateTime;
+                    var file_path = System.IO.Path.Combine(directory_path, "brokendata" + ((int)(dt - epoch).TotalSeconds).ToString() + ".raw");
+                    using (var fs = new System.IO.FileStream(file_path, System.IO.FileMode.Create))
+                        using (var bw = new System.IO.BinaryWriter(fs))
+                    {
+                        bw.Write(dc.data);
+                    }
+                    var ressize_path = System.IO.Path.Combine(directory_path, "ressizelist" + ((int)(dt - epoch).TotalSeconds).ToString() + ".txt");
+                    using (var sw = new System.IO.StreamWriter(ressize_path))
+                    {
+                        foreach (var ressize in dc.ResSizeList)
+                            sw.WriteLine(ressize.ToString());
+                    }
+                }
             }            
         }
 
@@ -648,7 +726,7 @@ namespace ReadoutWinformK
 
         private void ringwrite()
         {
-            writer(count: 10);
+            writer(count: 5);
         }
 
         private void writer(int count = 10)
@@ -662,11 +740,33 @@ namespace ReadoutWinformK
                     Console.WriteLine("tmpcount: {0}", Program.DataContainers.Count);
                 var dc = Program.DataContainers[0];
                 var dt = dc.StartDateTime;
-                var file_path = System.IO.Path.Combine(directory_path, "tmpdata" + ((int)(dt - epoch).TotalSeconds).ToString() + ".dat");
-                using(var sw = new System.IO.StreamWriter(file_path))
-                {                                        
-                    dc.Express().ForEach(line => sw.WriteLine(line));                                        
+                if (Program.TextOut)
+                {
+                    var file_path = System.IO.Path.Combine(directory_path, "tmpdata" + ((int)(dt - epoch).TotalSeconds).ToString() + ".dat");
+                    using (var sw = new System.IO.StreamWriter(file_path))
+                    {
+                        dc.Express().ForEach(line => sw.WriteLine(line));
+                    }
                 }
+                if (Program.BinaryOut)
+                {
+                    var file_path = System.IO.Path.Combine(directory_path, "tmpdata" + ((int)(dt - epoch).TotalSeconds).ToString() + ".bin");
+                    using (var fs = new System.IO.FileStream(file_path, System.IO.FileMode.Create))
+                        using(var bw = new System.IO.BinaryWriter(fs))
+                    {
+                        dc.WriteBinary(bw);
+                    }                    
+                }
+                if (Program.RawDump)
+                {
+                    var file_path = System.IO.Path.Combine(directory_path, "tmpdata" + ((int)(dt - epoch).TotalSeconds).ToString() + ".raw");
+                    using (var fs = new System.IO.FileStream(file_path, System.IO.FileMode.Create))
+                    using (var bw = new System.IO.BinaryWriter(fs))
+                    {
+                        bw.Write(dc.data);
+                    }
+                }
+
                 Program.DataContainers.RemoveAt(0);
             }
             writing = false;

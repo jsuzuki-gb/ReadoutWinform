@@ -14,12 +14,18 @@ namespace ReadoutWinformK
         /// The main entry point for the application.
         /// </summary>
         /// 
-        public static bool GUI_DEBUG = false;
-
+        public static bool GUI_DEBUG = false;   
         public static bool MY_DEBUG = true;
+        // output debug
+        public static bool TextOut = false;
+        public static bool BinaryOut = false;//true;
+        public static bool RawDump = false;//true;
+
+
         public static int NumberOfChannels = 64;
         public static double ADCSampleRate = 200e6;
-        public static double DownSampleRate = 2e5;
+        //public static double DownSampleRate = 2e5;
+        public static double DownSampleRate = 2e4;
         //public static double DownSampleRate = 2 << 20;
         //public static double DownSampleRate = 2e6;
         public static int DataUnit = NumberOfChannels * 12 + 7;
@@ -27,6 +33,7 @@ namespace ReadoutWinformK
         public static int SoftwareDownsampleCount = 20;
         //public static int SoftwareDownsampleCount = 1;
         public static List<DataContainer> DataContainers;
+        public static List<DataContainer> BrokenContainers;        
 
         public static bool IsLinux
         {
@@ -79,6 +86,7 @@ namespace ReadoutWinformK
             if(!GUI_DEBUG)
                 init();
             DataContainers = new List<DataContainer>();
+            BrokenContainers = new List<DataContainer>();
 
             Application.Run(new MainForm());
         }
