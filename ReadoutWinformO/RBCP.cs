@@ -5,17 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using ReadoutWinformK;
 
-namespace ReadOutTestConsole
+namespace ReadoutConsole
 {
     class TmpPacket
     {
-        private const byte VER_TYPE     = 0xff;
-        private const byte CMD_FLAG_TX  = 0x80;
-        private const byte CMD_FLAG_RX  = 0xc0;
-        private const byte PKT_ID       = 0x00;
-        private const byte DATA_LENGTH  = 0x01;
+        public static byte VER_TYPE     = 0xff;
+        public static byte CMD_FLAG_TX  = 0x80;
+        public static byte CMD_FLAG_RX  = 0xc0;
+        public static byte PKT_ID       = 0x00;        
 
         public bool ForceDataLength = false;
 
@@ -80,8 +78,11 @@ namespace ReadOutTestConsole
         {
             var wb_array = tmppacket.Express();
             udpclient.Send(wb_array, wb_array.Length, FPGAEndPoint);
-            IPEndPoint RemoteIpEndPoint = null;
+            //IPEndPoint RemoteIpEndPoint = null;            
+            IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
             byte[] msg = udpclient.Receive(ref RemoteIpEndPoint);
+            if (msg[0] != TmpPacket.VER_TYPE)
+                throw new Exception("VER_TYPE error");
             if (msg[1] == 0x89 || msg[1] == 0xc9)
                 throw new Exception("Bus error");
             return msg;
@@ -99,45 +100,37 @@ namespace ReadOutTestConsole
             return Write(tmppacket);
         }
 
+        public byte[] Read(byte[] addr, int count)
+        {
+            var send_bytes = new byte[count];
+            var tmppacket = new TmpPacket(addr, send_bytes, false);
+            tmppacket.ForceDataLength = true;
+            return Write(tmppacket);
+        }
+
         public void DDSEnable()
         {
-            /*
-            byte[] address = {0x70, 0x00, 0x00, 0x00};
-            byte[] data = {0x00};
+            byte[] address = {0x40, 0x00, 0x00, 0x00};
+            byte[] data = {0x01};
             Write(address, data);
-            */
         }
-
-        /*
+        
         public void ToggleIQDataGate(bool open)
-        {
-            byte[] read_address = {0x61, 0x00, 0x00, 0x00};
-            byte[] write_address = {0x50, 0x00, 0x00, 0x00};
-            var ret_data_init = Interpret(Read(read_address));
-            bool init_state = ret_data_init.Item2[0] == 0x01; // true iff the IQ data gate is open
-            if (init_state != open){
-                Write(write_address, new byte[] { 0x00 });
-                var ret_data_final = Interpret(Read(read_address));
-                bool final_state = ret_data_final.Item2[0] == 0x01;
-                if (final_state != open)
-                {
-                    Console.WriteLine("Toggle failed...Re-try!");
-                    System.Threading.Thread.Sleep(500);
-                    ToggleIQDataGate(open);
-                }
-            }                
-            else
-                Console.WriteLine("Nothing to be done");            
-        }
-        */
-        public void IQDataGate(bool open)
-        {
-            Write(new byte[] { 0x00, 0x00, 0x04, 0x80 }, BitConverter.GetBytes(open));
+        {            
+            byte[] gate_address = {0x50, 0x00, 0x00, 0x00};            
+            Write(gate_address, new byte[] { Convert.ToByte(open) });
         }
 
-        public void FPGAStart(bool start)
+        public void TimerReset()
         {
-            Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, BitConverter.GetBytes(start));
+            byte[] tr_address = { 0x50, 0x00, 0x00, 0x01 };
+            Write(tr_address, new byte[] { 0x01 });
+        }
+
+        public void SetChannel(int ch)
+        {
+            byte[] channel_address = { 0x50, 0x00, 0x00, 0x10 };
+            Write(channel_address, new byte[] { (byte)ch });
         }
 
         public static Tuple<byte[], byte[]> Interpret(byte[] msg)

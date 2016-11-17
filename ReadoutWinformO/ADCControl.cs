@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReadOutTestConsole
+namespace ReadoutConsole
 {
     class ADCControl
     {
@@ -50,10 +50,10 @@ namespace ReadOutTestConsole
         }
 
         public void ADCReset()
-        {
-            byte[] addr = ADCAddress(0x00);
-            byte[] data = {0x02};
-            _rbcp.Write(addr, data);
+        {            
+            _rbcp.Write(ADCAddress(0x00), new byte[] { 0x02 });
+            ADCWriteEnabled = true;
+            ADCChannelSwap(false);
         }
 
         public void ADCReadEnable() 
@@ -63,7 +63,7 @@ namespace ReadOutTestConsole
                 byte[] addr = ADCAddress(0x00);
                 byte[] data = { 0x01 };
                 _rbcp.Write(addr, data);
-                // ADCReadEnabled = true; ADCWriteEnabled = false; DEBUG
+                ADCReadEnabled = true; ADCWriteEnabled = false;
             }            
         }        
 
@@ -74,7 +74,7 @@ namespace ReadOutTestConsole
                 byte[] addr = ADCAddress(0x00);
                 byte[] data = { 0x00 };
                 _rbcp.Write(addr, data);
-                // ADCWriteEnabled = true; ADCReadEnabled = false; DEBUG
+                ADCWriteEnabled = true; ADCReadEnabled = false;
             }
         }
 
@@ -125,6 +125,27 @@ namespace ReadOutTestConsole
         public void ADCRegisterInitialize()
         {
             Write(0x42, new byte[] { 0xf8 });
+        }
+
+        public void ADCChannelSwap()
+        {
+            byte[] channel_swap_addr = { 0x12, 0x00, 0x00, 0x00 };
+            var data = _rbcp.Read(channel_swap_addr);
+            byte[] write_data = new byte[1];
+            if ( RBCP.Interpret(data).Item2[0] == 0)
+                write_data[0] = 1;
+            else
+                write_data[0] = 0;
+            _rbcp.Write(channel_swap_addr, write_data);
+        }
+
+        public void ADCChannelSwap(bool swap)
+        {
+            byte[] channel_swap_addr = { 0x12, 0x00, 0x00, 0x00 };
+            if (swap)
+                _rbcp.Write(channel_swap_addr, new byte[] { 0x01 });
+            else
+                _rbcp.Write(channel_swap_addr, new byte[] { 0x00 });
         }
     }
 }

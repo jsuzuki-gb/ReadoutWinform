@@ -1,4 +1,4 @@
-﻿namespace ReadoutWinformK
+﻿namespace ReadoutWinformO
 {
     partial class MainForm
     {
@@ -506,7 +506,7 @@
             // 
             // programBindingSource
             // 
-            this.programBindingSource.DataSource = typeof(ReadoutWinformK.Program);
+            this.programBindingSource.DataSource = typeof(ReadoutWinformO.Program);
             // 
             // channelSelectorComboBox
             // 

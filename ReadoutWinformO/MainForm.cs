@@ -8,12 +8,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ReadOutTestConsole;
 using System.Numerics;
 using MathNet.Numerics;
+using ReadoutConsole;
 
-
-namespace ReadoutWinformK
+namespace ReadoutWinformO
 {
     public partial class MainForm : Form
     {
@@ -27,7 +26,10 @@ namespace ReadoutWinformK
 
         private bool keepRunning;
         private bool measuring;
-        private const int dc_length = 32768;
+        //private const int dc_length = 32768;
+        //private const int dc_length = 32768;
+        //private const int dc_length = 1000;
+        private const int dc_length = 10000;
 
         // TOD Display settings
         private int xAxisDisplaySpacing;
@@ -90,7 +92,9 @@ namespace ReadoutWinformK
             //Frequency.Add(6.55e6); // resonance
             //Frequency.Add(10e6); // off resonance
             //Frequency.AddRange(new double[]{-57.39e6, -41.09e6, -21.8e6, -14.09e6,  -8.19e6,   7.41e6,  33.11e6,  49.71e6});
-            Frequency.AddRange(new double[] { -57.3e6, -40.95e6, -21.75e6, -14e6, -8.11e6, 7.48e6, 33.25e6, 49.84e6 });
+            //Frequency.AddRange(new double[] { -57.3e6, -40.95e6, -21.75e6, -14e6, -8.11e6, 7.48e6, 33.25e6, 49.84e6 });
+            Frequency.AddRange(new double[] { 51.5e6, 39.84e6 }); // resonance, off resonance
+            //Frequency.AddRange(new double[] { 51.5e6, 51.5e6 });
             // For DEBUG FIN
             InitializeComponent();
             axisPanel.Controls.Add(DataViewPanel);            
@@ -107,7 +111,7 @@ namespace ReadoutWinformK
             sweepBottomIQPanel.Paint += new PaintEventHandler(sweepBottomIQDraw);
             
             // write
-            directory_path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "tmpdata20160809");
+            directory_path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "tmpdata20161031");
 
             ReadoutStatus.Text = "Ready";
         }
@@ -121,19 +125,18 @@ namespace ReadoutWinformK
             var readout = Readout.Instance;
 
             var ow = OutputWave.Instance;
-            for (int i = 0; i < Program.NumberOfChannels; i++)
-            {
-                //ow.SetFrequency(i, Frequency[0], 0); 
-                ow.SetFrequency(i, Frequency[i % 8], 0);
+            
+            for (int i = 0; i < 64; i++)
+            {                
+                ow.SetFrequency(i, Frequency[i % 2], dds_en: false);
             }
+            rbcp.DDSEnable();
+            var ds = DownSample.Instance;
+            ds.SetRate((int)(Program.DownSampleRate));
 
             keepRunning = true;
             measuring = true;
 
-            readout.Clean();
-            Thread.Sleep(50); //!!! HARD CODED !!!
-            readout.Clean();
-            Thread.Sleep(50); //!!! HARD CODED !!!
             readout.Clean();
         }
 
@@ -141,9 +144,8 @@ namespace ReadoutWinformK
         {
             var rbcp = RBCP.Instance;
             var readout = Readout.Instance;
-
-            // datagate open
-            rbcp.IQDataGate(true);
+            // datagate open            
+            rbcp.ToggleIQDataGate(true);
             while (keepRunning)
             {
                 try
@@ -154,41 +156,27 @@ namespace ReadoutWinformK
                     if (stopRefresh)
                         stopRefresh = false;
                     dcwrapper.StartDateTime = DateTime.Now;
-                    //readout.Read(dcwrapper, dcwrapper.Length);
-                    readout.Read2(dcwrapper);
+                    readout.Read(dcwrapper, dcwrapper.Length);                                                                                
                 } catch (Exception e)
                 {
                     Console.WriteLine("Connection error occured....RETRY");
+                    measuring = false;
+                    keepRunning = false;
                     Console.WriteLine(e.Message);
                     // DEBUG
                     Thread.Sleep(10000);
                     Console.WriteLine("going to start connection");
-                    readout.Close();                
-                    readout.Connect();
+                    readout.Close();
+                    Program.init();
                     Console.WriteLine("connection established");
                     // DEBUG
-                    rbcp.IQDataGate(false);
-                    rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x00 });
-                    rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x01 });
-                    var ow = OutputWave.Instance;
-                    for (int i = 0; i < Program.NumberOfChannels; i++)
-                    {
-                        //ow.SetFrequency(i, Frequency[0], 0); 
-                        ow.SetFrequency(i, Frequency[i % 8], 0);
-                    }
-
-                    readout.Clean();
-                    Thread.Sleep(50); //!!! HARD CODED !!!
-                    readout.Clean();
-                    Thread.Sleep(50); //!!! HARD CODED !!!
-                    readout.Clean();
-                    rbcp.IQDataGate(true);
-                }
-                
+                    setupMeasurement();
+                    
+                }                
             }
-            rbcp.IQDataGate(false);
-            rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x00 });
-            rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x01 });
+            rbcp.ToggleIQDataGate(false);
+            //rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x00 });
+            //rbcp.Write(new byte[] { 0x00, 0x00, 0x04, 0x00 }, new byte[] { 0x01 });
 
             measuring = false;
             //StartButton.Enabled = true;
@@ -434,9 +422,11 @@ namespace ReadoutWinformK
         {
             if (!Program.GUI_DEBUG)
             {
-                RBCP.Instance.Close();
+                DACControl.Instance.TXEnableOff();
                 Readout.Instance.Close();
+                RBCP.Instance.Close();
                 writer(count: 0);
+                /*
                 foreach(var dc in Program.BrokenContainers)
                 {
                     var dt = dc.StartDateTime;
@@ -453,6 +443,7 @@ namespace ReadoutWinformK
                             sw.WriteLine(ressize.ToString());
                     }
                 }
+                */
             }            
         }
 
@@ -754,7 +745,7 @@ namespace ReadoutWinformK
                     using (var fs = new System.IO.FileStream(file_path, System.IO.FileMode.Create))
                         using(var bw = new System.IO.BinaryWriter(fs))
                     {
-                        dc.WriteBinary(bw);
+                        //dc.WriteBinary(bw);
                     }                    
                 }
                 if (Program.RawDump)

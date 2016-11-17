@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ReadOutTestConsole;
+using ReadoutWinformO;
 
-namespace ReadoutWinformK
+namespace ReadoutConsole
 {
     class DCWrapper : DataContainer
     {
@@ -40,7 +40,7 @@ namespace ReadoutWinformK
             
             SDIndex = 0;
             SDIQArray = new IQInfo[Program.NumberOfChannels];
-            Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => { SDIQArray[i] = new IQInfo(); });
+            Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => { SDIQArray[i] = new IQInfo(length); });
         }
 
         public void SoftwareDownsample(bool useMedian = false)
@@ -49,7 +49,6 @@ namespace ReadoutWinformK
                 return;
             for (; SDIndex < ConvertedLength / SDCount; SDIndex++)
             {
-                //Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => {
                 Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(i => {
                     double[] iq;
                     if (useMedian)
@@ -57,8 +56,8 @@ namespace ReadoutWinformK
                     else
                         iq = SDValue(SDIndex, i);
                     
-                    SDIQArray[i].Is.Add(iq[0]);
-                    SDIQArray[i].Qs.Add(iq[1]);
+                    SDIQArray[i].Is[SDIndex] = iq[0];
+                    SDIQArray[i].Qs[SDIndex] = iq[1];
                 });
             }            
         }

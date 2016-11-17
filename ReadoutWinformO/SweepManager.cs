@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ReadoutWinformK;
+using ReadoutWinformO;
 
-namespace ReadOutTestConsole
+namespace ReadoutConsole
 {
     class SweepManager
     {
@@ -64,28 +64,34 @@ namespace ReadOutTestConsole
             var ow = OutputWave.Instance;
             var rbcp = RBCP.Instance;
             var readout = Readout.Instance;
+            var ds = DownSample.Instance;
             
             Enumerable.Range(0, SweepPoints).ToList().ForEach(f_index =>
             {
-                // ONLY VALID FOR 2 CHANNEL
                 datacontainer = new DataContainer(NumberOfSamples);
-                for(int i = 0; i < Program.NumberOfChannels; i++)
+                /*
+                ow.SetFrequency(0, SweepFrequency[0][f_index], dds_en: false);
+                if (Program.MY_DEBUG)                
+                    Console.WriteLine("{0}", ow.GetFrequency(0));                
+                ow.SetFrequency(1, SweepFrequency[1][f_index], dds_en: true);
+                if (Program.MY_DEBUG)
+                    Console.WriteLine("{0}", ow.GetFrequency(1));
+                */
+                Enumerable.Range(0, 64).ToList().ForEach(ch =>
                 {
-                    ow.SetFrequency(i, SweepFrequency[0][f_index], 0, false);
-                }                
-                //ow.SetFrequency(1, SweepFrequency[1][f_index], 225.0, true);
+                    ow.SetFrequency(ch, SweepFrequency[ch%2][f_index], dds_en: false);
+                });
+                rbcp.DDSEnable();
+                //ds.SetRate((int)(Program.DownSampleRate));
 
                 readout.Clean();
                 System.Threading.Thread.Sleep(50);
                 readout.Clean();
-
-                rbcp.IQDataGate(true);                
-                //readout.Read(NumberOfSamples * Program.DataUnit);
+                System.Threading.Thread.Sleep(50);
+                rbcp.TimerReset();
+                rbcp.ToggleIQDataGate(true);                                
                 readout.Read(datacontainer, NumberOfSamples);
-                rbcp.IQDataGate(false);
-                // tmp mod
-                rbcp.FPGAStart(false);
-                rbcp.FPGAStart(true);
+                rbcp.ToggleIQDataGate(false);
                 //
                 datacontainer.Convert();
                 if (datacontainer.data[0] != 0xff)
@@ -93,6 +99,7 @@ namespace ReadOutTestConsole
 
                 Enumerable.Range(0, Program.NumberOfChannels).ToList().ForEach(ch =>
                 {
+                    /*
                     // get median
                     int halfIndex = datacontainer.ConvertedLength / 2;
                     var sortedIs = datacontainer.IQArray[ch].Is.OrderBy(n => n);
@@ -108,9 +115,10 @@ namespace ReadOutTestConsole
                         tmpi = sortedIs.ElementAt(halfIndex);
                         tmpq = sortedQs.ElementAt(halfIndex);
                     }
+                    */
                     // add
-                    Is[ch].Add(tmpi);
-                    Qs[ch].Add(tmpq);
+                    Is[ch].Add(datacontainer.IQArray[ch].Is.Average());
+                    Qs[ch].Add(datacontainer.IQArray[ch].Qs.Average());
                 });
 
                 if (Program.Verbose)
@@ -124,7 +132,20 @@ namespace ReadOutTestConsole
                                        Qs[1][f_index]);
                 }
                                                                                         
-            });            
+            });
+
+            if (Program.MY_DEBUG)
+            {
+                /*
+                using (var sw = new System.IO.StreamWriter("sweep.txt"))
+                {
+                    Enumerable.Range(0, SweepPoints).ToList().ForEach(f_index =>
+                    {
+                        sw.WriteLine("{0} {1} {2} {3} {4}");
+                    });
+                }
+                */
+            }
         }        
     }
 }

@@ -5,22 +5,20 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using ReadoutWinformK;
+using ReadoutWinformO;
 
-namespace ReadOutTestConsole
+namespace ReadoutConsole
 {
     class Readout
     {
         private static Readout instance;
 
-        //public const int BufferSize = 1024;        
-        public const int BufferSize = 1024*16;
+        //public const int BufferSize = 4096;
+        public const int BufferSize = 44800;
         public IPEndPoint FPGAEndPoint { private set; get; }
-        private TcpClient tcpclient;
-        //private TcpListener tcplistener;
+        private TcpClient tcpclient;        
         private NetworkStream networkstream;
-        private byte[] buffer;
-        //private byte[] huge_buffer;
+        private byte[] buffer;        
 
         private Readout() 
         {
@@ -48,12 +46,13 @@ namespace ReadOutTestConsole
         {
             tcpclient = new TcpClient();
             //tcpclient.SendTimeout = 100;
-            tcpclient.SendTimeout = 300;
-            //tcpclient.SendTimeout = 1000;
+            tcpclient.SendTimeout = 500;
+            //tcpclient.ReceiveBufferSize = 104857600;
+            Console.WriteLine("Buffer size: {0}", tcpclient.ReceiveBufferSize);
             tcpclient.Connect(FPGAEndPoint);
             networkstream = tcpclient.GetStream();
             //networkstream.ReadTimeout = 100;             
-            networkstream.ReadTimeout = 300;
+            networkstream.ReadTimeout = 500;            
         }
 
         public byte[] Read(int size)
@@ -74,11 +73,7 @@ namespace ReadOutTestConsole
                     tmpsize -= ressize;
                 } catch (Exception e)
                 {
-                    if (Program.MY_DEBUG)
-                    {
-                        Console.WriteLine("Connection failed, RETRY!");
-                        Console.WriteLine(e.ToString());                        
-                    }                        
+                    throw e;
                 }            
             }
 
@@ -88,33 +83,46 @@ namespace ReadOutTestConsole
             return ret_bytes;
         }
 
+        public void Read(DataContainer dc)
+        {
+            Read(dc, dc.Length);
+        }
+
         public void Read(DataContainer dc, int length)
         {
             var tmpsize = length*Program.DataUnit;
             while (tmpsize > 0)
             {
-                var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
-                dc.Write(buffer, ressize);
-                //if (Program.MY_DEBUG)
-                //Console.WriteLine("Ressize: {0}", ressize);
-                dc.ResSizeList.Add(ressize);
-                tmpsize -= ressize;
+                try
+                {
+                    var ressize = networkstream.Read(buffer, 0, Math.Min(BufferSize, tmpsize));
+                    dc.Write(buffer, ressize);
+                    //if (Program.MY_DEBUG)
+                    //Console.WriteLine("Ressize: {0}", ressize);
+                    tmpsize -= ressize;
+                } catch (Exception e)
+                {
+                    throw e;
+                    /*
+                    if (Program.MY_DEBUG)
+                    {
+                        Console.WriteLine("Connection failed, RETRY!");
+                        Console.WriteLine(e.ToString());
+                    }*/
+                }                
             }            
         }
 
-        public void Read2(DataContainer dc)
+        public async Task ReadAsync(DataContainer dc)
         {
-            var tmpindex = 0;
-            var length = dc.data.Length;
-            while (tmpindex < length)
+            var tmpsize = dc.Length * Program.DataUnit;
+            while (tmpsize > 0)
             {
-                var ressize = networkstream.Read(dc.data, tmpindex, length-tmpindex);
-                dc.ResSizeList.Add(ressize);
-                tmpindex += ressize;
-                dc.WriteIndex = tmpindex;
-                
-            }            
+                var ressize = await networkstream.ReadAsync(buffer, 0, Math.Min(BufferSize, tmpsize)).ConfigureAwait(false);
+                dc.Write(buffer, ressize);                                        
+                tmpsize -= ressize;
         }
+    }
         
         public void Clean_slow()
         {
@@ -142,6 +150,35 @@ namespace ReadOutTestConsole
             }
             if(Program.MY_DEBUG)
                 Console.WriteLine("Clean count: {0}", total_count);
+            buffer = new byte[BufferSize];
+        }
+
+        public async Task CleanAsync()
+        {
+            int nres;
+            int total_count = 0;
+            while (networkstream.DataAvailable)
+            {
+                nres = await networkstream.ReadAsync(buffer, 0, buffer.Length);
+                total_count += nres;
+            }
+            if (Program.MY_DEBUG)
+                Console.WriteLine("Clean count: {0}", total_count);
+            buffer = new byte[BufferSize];
+        }
+
+        public void Clean2()
+        {
+            int nres;
+            int total_count = 0;
+            do
+            {
+                nres = networkstream.Read(buffer, 0, buffer.Length);
+                total_count += nres;
+            } while (nres > 0);
+            if (Program.MY_DEBUG)
+                Console.WriteLine("Clean 2 count: {0}", total_count);
+            buffer = new byte[BufferSize];
         }
 
         public void Close()
@@ -149,6 +186,5 @@ namespace ReadOutTestConsole
             networkstream.Close();
             tcpclient.Close();
         }
-
     }
 }
